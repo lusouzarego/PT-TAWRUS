@@ -8,7 +8,8 @@
     "semana": "tsx scripts/semana.ts",
     "enviar-hoje": "tsx scripts/enviar-hoje.ts",
     "set-webhook": "tsx scripts/set-webhook.ts",
-    "importar": "tsx scripts/importar-instagram.ts"
+    "importar": "tsx scripts/importar-instagram.ts",
+    "baixar-demos": "tsx scripts/baixar-demos.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

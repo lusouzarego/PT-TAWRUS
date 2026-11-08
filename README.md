@@ -42,7 +42,11 @@ Cada treino dura ~30–35 min (aquecimento + circuito + alongamento, 40 s de exe
 - **▶** inicia os 40 s. Bipes nos últimos 3 segundos e um alarme no fim, que **para sozinho**
   e já deixa o próximo exercício pronto para você apertar ▶ de novo.
 - **Modo contínuo** (opcional): descansa 20 s e começa o próximo exercício sozinho.
-- **🎬 Ver vídeo** abre o reel do Instagram ali mesmo, sem sair do timer (o vídeo continua
+- **Como fazer cada exercício:** 35 exercícios têm fotos de demonstração que se alternam
+  (1 · início → 2 · fim) e o passo a passo aberto. Os que não têm foto abrem direto o reel
+  do Instagram. Todos têm um botão **▶️ YouTube** com a busca do vídeo explicativo.
+- O timer fica fixo no rodapé, então dá para ver as fotos e apertar ▶ sem rolar a tela.
+- **🎬 Vídeo salvo** abre o reel do Instagram ali mesmo, sem sair do timer (o vídeo continua
   tocando enquanto o timer roda). Também tem o passo a passo e os outros vídeos que você
   salvou do mesmo exercício.
 - Vibra no fim (haptic do Telegram), mantém a tela acesa durante o exercício e permite
@@ -86,6 +90,13 @@ O projeto `pt-tawrus` já está na Vercel, ligado a este repositório (branch `m
 Pronto: às 05:00 (Itália) todo dia o treino chega sozinho, inclusive na troca de horário de
 verão/inverno. No plano gratuito (Hobby) da Vercel o envio pode chegar em qualquer minuto
 entre 05:00 e 05:59. No plano Pro chega no minuto exato.
+
+### Fotos de demonstração
+
+As fotos vêm da [Free Exercise DB](https://github.com/yuhonas/free-exercise-db), que é
+domínio público. O mapa entre os nossos exercícios e os de lá fica em `lib/demos.ts`. Para
+adicionar um exercício: coloque no mapa, rode `npm run baixar-demos` e depois
+`python3 scripts/juntar-demos.py` (gera a imagem lado a lado usada no álbum das 5h).
 
 ## Desenvolvimento
 

@@ -4,6 +4,7 @@
 // gerado por `npm run importar`). Aqui ficam só os complementos que não estavam lá:
 // aquecimento, alongamento e os clássicos de Pilates Mat para o core.
 
+import { demoFrames } from "./demos";
 import { instagramExercises } from "./instagram.generated";
 
 export type Equipment = "nenhum" | "tapete" | "halteres" | "miniband" | "caneleira" | "cadeira";
@@ -28,6 +29,10 @@ export type Exercise = {
   refs?: Reference[];
   /** Foto opcional, caminho a partir de /public (JPG/PNG/WebP). */
   image?: string;
+  /** Fotos de demonstração [início, fim], preenchidas a partir de lib/demos.ts. */
+  frames?: string[];
+  /** Busca no YouTube para o botão de vídeo explicativo (padrão: nome do exercício). */
+  youtube?: string;
 };
 
 const complementos: Exercise[] = [
@@ -43,15 +48,15 @@ const complementos: Exercise[] = [
   { id: "mountain-climber", name: "Mountain climber", equipment: ["tapete"], cue: "Em prancha alta, traga os joelhos ao peito alternando, quadril estável." },
 
   // ── Pilates Mat: core ───────────────────────────────────────────────────
-  { id: "the-hundred", name: "The Hundred", equipment: ["tapete"], cue: "Cabeça e ombros elevados, pernas em mesa ou estendidas, bata os braços: inspira 5, expira 5." },
-  { id: "single-leg-stretch", name: "Single leg stretch", equipment: ["tapete"], cue: "Abraça um joelho e estende a outra perna, alternando. Lombar no chão." },
-  { id: "double-leg-stretch", name: "Double leg stretch", equipment: ["tapete"], cue: "Estenda braços e pernas juntos, depois recolha abraçando os joelhos." },
-  { id: "criss-cross", name: "Criss cross", equipment: ["tapete"], cue: "Leve o ombro em direção ao joelho oposto, devagar e controlado." },
-  { id: "dead-bug", name: "Dead bug", equipment: ["tapete"], cue: "Estenda braço e perna opostos sem tirar a lombar do chão." },
-  { id: "swimming", name: "Swimming", equipment: ["tapete"], cue: "De bruços, braços e pernas elevados, alterne batendo como natação." },
-  { id: "toe-taps", name: "Toe taps", equipment: ["tapete"], cue: "Pernas em mesa, toque um pé de cada vez no chão sem arquear." },
-  { id: "leg-circles", name: "Leg circles", equipment: ["tapete"], cue: "Perna estendida para cima, círculos controlados. Troque de perna na metade." },
-  { id: "teaser", name: "Teaser", equipment: ["tapete"], cue: "Forme um V com o corpo, braços paralelos às pernas. Suba e desça com controle." },
+  { id: "the-hundred", youtube: "pilates the hundred tutorial", name: "The Hundred", equipment: ["tapete"], cue: "Cabeça e ombros elevados, pernas em mesa ou estendidas, bata os braços: inspira 5, expira 5." },
+  { id: "single-leg-stretch", youtube: "pilates single leg stretch tutorial", name: "Single leg stretch", equipment: ["tapete"], cue: "Abraça um joelho e estende a outra perna, alternando. Lombar no chão." },
+  { id: "double-leg-stretch", youtube: "pilates double leg stretch tutorial", name: "Double leg stretch", equipment: ["tapete"], cue: "Estenda braços e pernas juntos, depois recolha abraçando os joelhos." },
+  { id: "criss-cross", youtube: "pilates criss cross tutorial", name: "Criss cross", equipment: ["tapete"], cue: "Leve o ombro em direção ao joelho oposto, devagar e controlado." },
+  { id: "dead-bug", youtube: "dead bug exercício como fazer", name: "Dead bug", equipment: ["tapete"], cue: "Estenda braço e perna opostos sem tirar a lombar do chão." },
+  { id: "swimming", youtube: "pilates swimming exercício", name: "Swimming", equipment: ["tapete"], cue: "De bruços, braços e pernas elevados, alterne batendo como natação." },
+  { id: "toe-taps", youtube: "pilates toe taps tutorial", name: "Toe taps", equipment: ["tapete"], cue: "Pernas em mesa, toque um pé de cada vez no chão sem arquear." },
+  { id: "leg-circles", youtube: "pilates leg circles tutorial", name: "Leg circles", equipment: ["tapete"], cue: "Perna estendida para cima, círculos controlados. Troque de perna na metade." },
+  { id: "teaser", youtube: "pilates teaser tutorial", name: "Teaser", equipment: ["tapete"], cue: "Forme um V com o corpo, braços paralelos às pernas. Suba e desça com controle." },
 
   // ── Desaquecimento / alongamento ────────────────────────────────────────
   { id: "postura-crianca", name: "Postura da criança", equipment: ["tapete"], cue: "Sente nos calcanhares e estenda os braços à frente. Respire fundo." },
@@ -64,5 +69,5 @@ const complementos: Exercise[] = [
 ];
 
 export const exercises: Record<string, Exercise> = Object.fromEntries(
-  [...instagramExercises, ...complementos].map((e) => [e.id, e]),
+  [...instagramExercises, ...complementos].map((e) => [e.id, { ...e, frames: e.frames ?? demoFrames(e.id) }]),
 );

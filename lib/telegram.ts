@@ -64,13 +64,16 @@ function timerButton(day: DayKey) {
 export async function sendWorkout(chatId: string | number, day: DayKey): Promise<void> {
   const w = buildWorkout(day);
 
-  // Fotos: só exercícios que já têm imagem, sem repetir, no máximo 10 (limite do Telegram).
+  // Álbum: fotos de demonstração (início → fim), circuito primeiro, sem repetir,
+  // no máximo 10 (limite do Telegram).
   const seen = new Set<string>();
-  const photos = w.blocks
+  const ordered = [...w.blocks].sort((x, y) => Number(y.title === "Circuito") - Number(x.title === "Circuito"));
+  const photos = ordered
     .flatMap((b) => b.exercises)
-    .filter((e) => e.image && !seen.has(e.id) && seen.add(e.id))
+    .map((e) => ({ e, img: e.image ?? (e.frames ? `/img/exercicios/${e.id}.jpg` : undefined) }))
+    .filter(({ e, img }) => img && !seen.has(e.id) && seen.add(e.id))
     .slice(0, 10)
-    .map((e) => ({ type: "photo", media: `${appUrl()}${e.image}`, caption: e.name }));
+    .map(({ e, img }) => ({ type: "photo", media: `${appUrl()}${img}`, caption: e.name }));
 
   if (photos.length === 1) {
     await tg("sendPhoto", { chat_id: chatId, photo: photos[0].media, caption: photos[0].caption });

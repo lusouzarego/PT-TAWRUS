@@ -34,7 +34,7 @@
     .days button[aria-current="true"] { background: var(--accent); color: var(--accent-text); }
 
     .card { background: var(--card); border-radius: 20px; padding: 16px; }
-    .media { aspect-ratio: 4 / 3; border-radius: 14px; overflow: hidden; margin-bottom: 12px;
+    .media { aspect-ratio: 3 / 2; border-radius: 14px; overflow: hidden; margin-bottom: 12px;
       display: grid; place-items: center; font-size: 56px;
       background: color-mix(in srgb, var(--accent) 12%, var(--card)); }
     .media img { width: 100%; height: 100%; object-fit: cover; }
@@ -60,6 +60,16 @@
       width: 54px; height: 54px; border-radius: 50%; font-size: 20px; }
     .controls .play { width: 84px; height: 84px; font-size: 32px;
       background: var(--accent); color: var(--accent-text); }
+    /* Timer fixo no rodapé: dá para ver as fotos e apertar ▶ sem rolar a tela. */
+    .dock { position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center;
+      justify-content: space-between; gap: 12px; margin: 12px -16px 0;
+      padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+      background: var(--bg); box-shadow: 0 -6px 16px rgba(0,0,0,.06); }
+    .dock .timer { width: 104px; height: 104px; margin: 0; flex: none; }
+    .dock .timer .secs { font-size: 34px; }
+    .dock .timer .phase { font-size: 11px; margin-top: 2px; }
+    .dock .controls { gap: 12px; }
+    .dock .controls .play { width: 72px; height: 72px; font-size: 28px; }
     .toggle { display: flex; align-items: center; justify-content: center; gap: 8px;
       margin: 16px 0 4px; font-size: 14px; color: var(--muted); }
     .toggle input { width: 18px; height: 18px; accent-color: var(--accent); }
@@ -75,6 +85,14 @@
     .done-banner div { font-size: 56px; }
     .error { color: #c0392b; text-align: center; margin-top: 40px; }
 
+    .demo { position: relative; width: 100%; height: 100%; background: #fff; }
+    .demo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+    .demo .f1, .demo .t1 { animation: flip 2.4s step-end infinite; }
+    .demo .t0 { animation: flop 2.4s step-end infinite; }
+    .demo .tag { position: absolute; left: 8px; bottom: 8px; font-size: 12px; font-weight: 600;
+      padding: 3px 8px; border-radius: 99px; background: rgba(0,0,0,.6); color: #fff; }
+    @keyframes flip { 0% { opacity: 0; } 50% { opacity: 1; } }
+    @keyframes flop { 0% { opacity: 1; } 50% { opacity: 0; } }
     .media.video { aspect-ratio: auto; display: block; background: #fff; }
     .media iframe { display: block; width: 100%; height: 560px; max-height: 65vh; border: 0; }
     .actions { display: flex; gap: 8px; margin-top: 12px; }
@@ -108,7 +126,7 @@
   let phase = "work";          // "work" | "rest"
   let running = false, endAt = 0, remainingMs = 0, lastBeep = null;
   let timerId = null, wakeLock = null, audio = null;
-  let continuous = false, showVideo = false, videoEl = null;
+  let continuous = false, videoOverride = null, videoEl = null;  // videoOverride: null = padrão do exercício
   try { continuous = localStorage.getItem("continuous") === "1"; } catch (e) {}
 
   // ── Som ───────────────────────────────────────────────────────────────
@@ -185,7 +203,7 @@
     clearInterval(timerId);
     if (phase === "work") {
       endSound(); buzz("end");
-      idx++; showVideo = false;
+      idx++; videoOverride = null; window.scrollTo({ top: 0, behavior: "smooth" });
       if (idx >= steps.length) { running = false; keepAwake(false); return render(); }
       if (continuous && workout.restSeconds > 0) {
         phase = "rest"; remainingMs = 0; return start();
@@ -198,9 +216,10 @@
   }
 
   function go(to) {
-    stopAndReset(); keepAwake(false); showVideo = false;
+    stopAndReset(); keepAwake(false); videoOverride = null;
     idx = Math.max(0, Math.min(steps.length - 1, to));
     render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   // ── Vídeos do Instagram ───────────────────────────────────────────────
@@ -243,16 +262,26 @@
     const st = steps[idx], ex = st.ex;
     const showing = phase === "rest" ? "Descanso · a seguir" : `${st.block}${st.rounds > 1 ? ` · rodada ${st.round}/${st.rounds}` : ""}`;
     const ref = ex.refs && ex.refs[0];
-    const media = showVideo && ref
+    const hasDemo = !!(ex.frames && ex.frames.length === 2);
+    // Sem fotos de demonstração, o vídeo do Instagram já abre sozinho.
+    const showVideo = !!ref && (videoOverride ?? !hasDemo);
+    const media = showVideo
       ? `<span id="video-slot"></span>`
+      : hasDemo
+      ? `<div class="demo" role="img" aria-label="${esc(ex.name)}: posição inicial e final">
+          <img src="${esc(ex.frames[0])}" alt=""><img class="f1" src="${esc(ex.frames[1])}" alt="">
+          <span class="tag t0">1 · início</span><span class="tag t1">2 · fim</span></div>`
       : ex.image
       ? `<img src="${esc(ex.image)}" alt="${esc(ex.name)}">`
       : `<span aria-hidden="true">${ICONS[st.block] || "💪"}</span>`;
-    const actions = ref ? `<div class="actions">
-        <button id="video">${showVideo ? "✕ Fechar vídeo" : "🎬 Ver vídeo"}</button>
-        <button data-link="${esc(ref.link)}">Abrir no Instagram ↗</button></div>` : "";
+    const ytQuery = ex.youtube || `${ex.name} ${ex.style === "Pilates Mat" ? "pilates" : "exercício"} como fazer`;
+    const yt = `https://www.youtube.com/results?search_query=${encodeURIComponent(ytQuery)}`;
+    const actions = `<div class="actions">
+        ${ref && hasDemo ? `<button id="video">${showVideo ? "📷 Ver fotos" : "🎬 Vídeo salvo"}</button>` : ""}
+        ${ref ? `<button data-link="${esc(ref.link)}">Instagram ↗</button>` : ""}
+        <button data-link="${esc(yt)}">▶️ YouTube</button></div>`;
     const stepsHtml = ex.steps && ex.steps.length
-      ? `<details><summary>Passo a passo</summary><ol>${ex.steps.map((x) => `<li>${esc(x)}</li>`).join("")}</ol></details>` : "";
+      ? `<details open><summary>Passo a passo</summary><ol>${ex.steps.map((x) => `<li>${esc(x)}</li>`).join("")}</ol></details>` : "";
     const others = ex.refs && ex.refs.length > 1
       ? `<details><summary>Outros vídeos que você salvou (${ex.refs.length - 1})</summary><ul>${ex.refs.slice(1).map((r) =>
           `<li><a href="#" data-link="${esc(r.link)}">${esc(r.title)}</a> · @${esc(r.author)}</li>`).join("")}</ul></details>` : "";
@@ -264,13 +293,14 @@
 
     app.innerHTML = head + `
       <section class="card">
-        <div class="media${showVideo && ref ? " video" : ""}">${media}</div>
+        <div class="media${showVideo ? " video" : ""}">${media}</div>
         <div class="label">${esc(showing)} · ${idx + 1}/${steps.length}</div>
         <h2>${esc(ex.name)}</h2>
-        <p class="cue">${esc(ex.cue)}</p>
+        ${ex.steps && ex.steps.length ? "" : `<p class="cue">${esc(ex.cue)}</p>`}
         ${chips ? `<div class="chips">${chips}</div>` : ""}
         ${actions}${stepsHtml}${others}
       </section>
+      <div class="dock">
       <div class="timer ${phase === "rest" ? "rest" : ""}">
         <svg viewBox="0 0 210 210"><circle class="track" cx="105" cy="105" r="${RADIUS}"/>
           <circle class="bar" cx="105" cy="105" r="${RADIUS}" stroke-dasharray="${CIRC}" stroke-dashoffset="0"/></svg>
@@ -280,6 +310,7 @@
         <button id="prev" aria-label="Anterior">⏮</button>
         <button class="play" id="play" aria-label="${running ? "Pausar" : "Iniciar"}">${running ? "⏸" : "▶"}</button>
         <button id="next" aria-label="Próximo">⏭</button>
+      </div>
       </div>
       <label class="toggle"><input type="checkbox" id="cont" ${continuous ? "checked" : ""}>
         Modo contínuo (descansa ${workout.restSeconds}s e segue sozinho)</label>
@@ -307,7 +338,7 @@
     };
     app.querySelectorAll("ol li[data-i]").forEach((li) => (li.onclick = () => go(Number(li.dataset.i))));
     const vbtn = document.getElementById("video");
-    if (vbtn) vbtn.onclick = () => { showVideo = !showVideo; render(); };
+    if (vbtn) vbtn.onclick = () => { videoOverride = !showVideo; render(); };
     app.querySelectorAll("[data-link]").forEach((el) => (el.onclick = (e) => { e.preventDefault(); openLink(el.dataset.link); }));
     bindDays();
   }
