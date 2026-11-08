@@ -53,7 +53,7 @@ Se esquecer o `CRON_SECRET`: crie um novo na Vercel (Secret não pode ser lido d
 | Catálogo | `lib/exercises.ts` + `lib/instagram.generated.ts` | 74 exercícios da pasta "Exercícios" do Instagram + aquecimento, alongamento e Pilates de core |
 | Plano da semana | `lib/plan.ts` | Foco de cada dia, aquecimento, circuito, rodadas e alongamento |
 | Ilustrações | `public/img/ilustracoes/` + `data/ilustracoes.json` | 68 ilustrações da personagem (1 · início → 2 · fim) |
-| Envio diário | `api/cron.ts` + `vercel.json` | Agendado às 03:00 e 04:00 UTC; só envia o que cair às 05:00 em Roma (resolve o horário de verão) |
+| Envio diário | `api/cron.ts` (03:00 UTC) + `api/cron-inverno.ts` (04:00 UTC) + `vercel.json` | Só envia o que cair às 05:00 em Roma (resolve o horário de verão). Ver em Vercel → Settings → Cron Jobs |
 | Comandos | `api/webhook.ts` | `/start`, `/hoje`, `/semana`, `/dia qui` |
 | Ligar o bot | `api/setup.ts` | `pt-tawrus.vercel.app/api/setup?key=<CRON_SECRET>` registra webhook e comandos |
 | Timer | `public/index.html` | Mini App do Telegram |
@@ -77,8 +77,8 @@ No plano gratuito (Hobby) da Vercel o envio pode chegar em qualquer minuto entre
 
 ### Timer (Mini App)
 
-- **▶** inicia os 40 s. Bipes nos últimos 3 segundos e alarme no fim; **para sozinho** e deixa
-  o próximo exercício pronto.
+- **▶** inicia os 40 s. Bipes nos últimos 3 segundos e, no fim, o som do PT Tawrus (sino de ringue +
+  batida, `public/sons/pt-tawrus.mp3`); **para sozinho** e deixa o próximo exercício pronto.
 - **Modo contínuo** (opcional): descansa 20 s e começa o próximo sozinho.
 - Cada exercício mostra a **ilustração da personagem**, o **passo a passo** e os botões
   **🎬 Vídeo salvo** (reel do Instagram), **Instagram ↗** e **▶️ YouTube**.
@@ -106,6 +106,11 @@ kettlebell vira halter; banco, sofá e step viram cadeira.
 ### Ilustração para um exercício novo
 Gere no Canva com a personagem de referência (`MAHaVxgNAsk`), salve o JPG em
 `public/img/ilustracoes/<id>.jpg` e adicione a linha em `data/ilustracoes.json`.
+
+### Som de notificação no Telegram
+O mesmo som (`public/sons/pt-tawrus.mp3`, 4,6 s, composição original) pode ser o som de notificação
+da conversa: segure o áudio que o bot mandou → *Salvar para notificações* → perfil do bot →
+Notificações → Som → "PT Tawrus".
 
 ## Desenvolvimento
 

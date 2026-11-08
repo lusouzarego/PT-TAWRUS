@@ -136,7 +136,25 @@
     osc.start(t); osc.stop(t + ms / 1000 + 0.05);
   }
   const tickSound = () => beep(880, 140);
-  const endSound = () => { beep(1320, 250); beep(1320, 250, 0.3); beep(1760, 500, 0.6); };
+  // Fim dos 40 s: o som do PT Tawrus (sino de ringue + batida). Bipes se ainda não carregou.
+  let endBuffer = null, endLoading = false;
+  function loadEndSound() {
+    if (!audio || endBuffer || endLoading) return;
+    endLoading = true;
+    fetch("/sons/pt-tawrus.mp3").then((r) => r.arrayBuffer())
+      .then((b) => new Promise((ok, fail) => audio.decodeAudioData(b, ok, fail)))
+      .then((buf) => { endBuffer = buf; })
+      .catch(() => {}).finally(() => { endLoading = false; });
+  }
+  function endSound() {
+    if (audio && endBuffer) {
+      const src = audio.createBufferSource(), gain = audio.createGain();
+      gain.gain.value = 0.9;
+      src.buffer = endBuffer; src.connect(gain).connect(audio.destination); src.start();
+      return;
+    }
+    beep(1320, 250); beep(1320, 250, 0.3); beep(1760, 500, 0.6);
+  }
   function buzz(kind) {
     if (tg && tg.HapticFeedback) {
       kind === "end" ? tg.HapticFeedback.notificationOccurred("success") : tg.HapticFeedback.impactOccurred("light");
@@ -160,6 +178,7 @@
     if (!audio) {
       const Ctx = window.AudioContext || window.webkitAudioContext;
       if (Ctx) audio = new Ctx();
+      loadEndSound();
     }
     if (audio && audio.state === "suspended") audio.resume();
     if (idx >= steps.length) return;

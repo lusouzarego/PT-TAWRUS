@@ -1,4 +1,4 @@
-// Disparado pela Vercel Cron, que só entende UTC (ver vercel.json).
+// Disparado pela Vercel Cron às 03:00 UTC (aqui) e 04:00 UTC (api/cron-inverno.ts).
 // 5h na Itália = 03:00 UTC no horário de verão (CEST) e 04:00 UTC no inverno (CET).
 // Os dois horários são agendados e só envia o que cair às 5h em Roma.
 import { sendWorkout } from "../lib/telegram";
