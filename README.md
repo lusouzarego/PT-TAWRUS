@@ -42,10 +42,10 @@ Cada treino dura ~30–35 min (aquecimento + circuito + alongamento, 40 s de exe
 - **▶** inicia os 40 s. Bipes nos últimos 3 segundos e um alarme no fim, que **para sozinho**
   e já deixa o próximo exercício pronto para você apertar ▶ de novo.
 - **Modo contínuo** (opcional): descansa 20 s e começa o próximo exercício sozinho.
-- **Como fazer cada exercício:** 35 exercícios têm fotos de demonstração que se alternam
-  (1 · início → 2 · fim) e o passo a passo aberto. Os que não têm foto abrem direto o reel
-  do Instagram. Todos têm um botão **▶️ YouTube** com a busca do vídeo explicativo.
-- O timer fica fixo no rodapé, então dá para ver as fotos e apertar ▶ sem rolar a tela.
+- **Como fazer cada exercício:** todos os exercícios têm a ilustração da personagem
+  (1 · início → 2 · fim) e o passo a passo aberto. Também há o botão **▶️ YouTube** com a busca
+  do vídeo explicativo.
+- O timer fica fixo no rodapé, então dá para ver a ilustração e apertar ▶ sem rolar a tela.
 - **🎬 Vídeo salvo** abre o reel do Instagram ali mesmo, sem sair do timer (o vídeo continua
   tocando enquanto o timer roda). Também tem o passo a passo e os outros vídeos que você
   salvou do mesmo exercício.
@@ -91,12 +91,13 @@ Pronto: às 05:00 (Itália) todo dia o treino chega sozinho, inclusive na troca 
 verão/inverno. No plano gratuito (Hobby) da Vercel o envio pode chegar em qualquer minuto
 entre 05:00 e 05:59. No plano Pro chega no minuto exato.
 
-### Fotos de demonstração
+### Ilustrações da personagem
 
-As fotos vêm da [Free Exercise DB](https://github.com/yuhonas/free-exercise-db), que é
-domínio público. O mapa entre os nossos exercícios e os de lá fica em `lib/demos.ts`. Para
-adicionar um exercício: coloque no mapa, rode `npm run baixar-demos` e depois
-`python3 scripts/juntar-demos.py` (gera a imagem lado a lado usada no álbum das 5h).
+Cada exercício tem uma ilustração da personagem PT Tawrus (inspirada na Luana) mostrando
+**1 · início** e **2 · fim** do movimento, gerada no Canva. Os arquivos ficam em
+`public/img/ilustracoes/<id>.jpg` e o registro (id do exercício → id da imagem no Canva)
+em `data/ilustracoes.json`. Para um exercício novo: gere a ilustração, salve o JPG com o
+id do exercício e adicione a linha no JSON.
 
 ## Desenvolvimento
 

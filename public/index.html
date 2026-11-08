@@ -34,7 +34,7 @@
     .days button[aria-current="true"] { background: var(--accent); color: var(--accent-text); }
 
     .card { background: var(--card); border-radius: 20px; padding: 16px; }
-    .media { aspect-ratio: 3 / 2; border-radius: 14px; overflow: hidden; margin-bottom: 12px;
+    .media { aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; margin-bottom: 12px;
       display: grid; place-items: center; font-size: 56px;
       background: color-mix(in srgb, var(--accent) 12%, var(--card)); }
     .media img { width: 100%; height: 100%; object-fit: cover; }
@@ -85,14 +85,7 @@
     .done-banner div { font-size: 56px; }
     .error { color: #c0392b; text-align: center; margin-top: 40px; }
 
-    .demo { position: relative; width: 100%; height: 100%; background: #fff; }
-    .demo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
-    .demo .f1, .demo .t1 { animation: flip 2.4s step-end infinite; }
-    .demo .t0 { animation: flop 2.4s step-end infinite; }
-    .demo .tag { position: absolute; left: 8px; bottom: 8px; font-size: 12px; font-weight: 600;
-      padding: 3px 8px; border-radius: 99px; background: rgba(0,0,0,.6); color: #fff; }
-    @keyframes flip { 0% { opacity: 0; } 50% { opacity: 1; } }
-    @keyframes flop { 0% { opacity: 1; } 50% { opacity: 0; } }
+    .media img.ilus { object-fit: contain; background: #fff; }
     .media.video { aspect-ratio: auto; display: block; background: #fff; }
     .media iframe { display: block; width: 100%; height: 560px; max-height: 65vh; border: 0; }
     .actions { display: flex; gap: 8px; margin-top: 12px; }
@@ -262,22 +255,20 @@
     const st = steps[idx], ex = st.ex;
     const showing = phase === "rest" ? "Descanso · a seguir" : `${st.block}${st.rounds > 1 ? ` · rodada ${st.round}/${st.rounds}` : ""}`;
     const ref = ex.refs && ex.refs[0];
-    const hasDemo = !!(ex.frames && ex.frames.length === 2);
-    // Sem fotos de demonstração, o vídeo do Instagram já abre sozinho.
+    const hasDemo = !!ex.illustration;
+    // Sem ilustração, o vídeo do Instagram já abre sozinho.
     const showVideo = !!ref && (videoOverride ?? !hasDemo);
     const media = showVideo
       ? `<span id="video-slot"></span>`
       : hasDemo
-      ? `<div class="demo" role="img" aria-label="${esc(ex.name)}: posição inicial e final">
-          <img src="${esc(ex.frames[0])}" alt=""><img class="f1" src="${esc(ex.frames[1])}" alt="">
-          <span class="tag t0">1 · início</span><span class="tag t1">2 · fim</span></div>`
+      ? `<img class="ilus" src="${esc(ex.illustration)}" alt="${esc(ex.name)}: 1 início, 2 fim do movimento">`
       : ex.image
       ? `<img src="${esc(ex.image)}" alt="${esc(ex.name)}">`
       : `<span aria-hidden="true">${ICONS[st.block] || "💪"}</span>`;
     const ytQuery = ex.youtube || `${ex.name} ${ex.style === "Pilates Mat" ? "pilates" : "exercício"} como fazer`;
     const yt = `https://www.youtube.com/results?search_query=${encodeURIComponent(ytQuery)}`;
     const actions = `<div class="actions">
-        ${ref && hasDemo ? `<button id="video">${showVideo ? "📷 Ver fotos" : "🎬 Vídeo salvo"}</button>` : ""}
+        ${ref && hasDemo ? `<button id="video">${showVideo ? "🖼️ Ver ilustração" : "🎬 Vídeo salvo"}</button>` : ""}
         ${ref ? `<button data-link="${esc(ref.link)}">Instagram ↗</button>` : ""}
         <button data-link="${esc(yt)}">▶️ YouTube</button></div>`;
     const stepsHtml = ex.steps && ex.steps.length

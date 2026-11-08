@@ -4,7 +4,7 @@
 // gerado por `npm run importar`). Aqui ficam só os complementos que não estavam lá:
 // aquecimento, alongamento e os clássicos de Pilates Mat para o core.
 
-import { demoFrames } from "./demos";
+import ilustracoes from "../data/ilustracoes.json";
 import { instagramExercises } from "./instagram.generated";
 
 export type Equipment = "nenhum" | "tapete" | "halteres" | "miniband" | "caneleira" | "cadeira";
@@ -29,8 +29,8 @@ export type Exercise = {
   refs?: Reference[];
   /** Foto opcional, caminho a partir de /public (JPG/PNG/WebP). */
   image?: string;
-  /** Fotos de demonstração [início, fim], preenchidas a partir de lib/demos.ts. */
-  frames?: string[];
+  /** Ilustração da personagem (1 · início, 2 · fim), de data/ilustracoes.json. */
+  illustration?: string;
   /** Busca no YouTube para o botão de vídeo explicativo (padrão: nome do exercício). */
   youtube?: string;
 };
@@ -69,5 +69,8 @@ const complementos: Exercise[] = [
 ];
 
 export const exercises: Record<string, Exercise> = Object.fromEntries(
-  [...instagramExercises, ...complementos].map((e) => [e.id, { ...e, frames: e.frames ?? demoFrames(e.id) }]),
+  [...instagramExercises, ...complementos].map((e) => [
+    e.id,
+    { ...e, illustration: e.id in ilustracoes ? `/img/ilustracoes/${e.id}.jpg` : undefined },
+  ]),
 );
