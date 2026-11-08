@@ -65,27 +65,27 @@ dentro do próprio Mini App. Se um reel não permitir incorporação, use "Abrir
 
 Rode `npm run semana` para ver a semana inteira e conferir se todos os ids existem.
 
-## Colocar no ar (≈15 min)
+## Colocar no ar
 
-1. **Criar o bot:** no Telegram, fale com [@BotFather](https://t.me/BotFather) → `/newbot` → guarde o token.
-2. **Deploy na Vercel:** importe este repositório em vercel.com (sem build, é só o padrão).
-   Em *Settings → Environment Variables*, preencha (veja `.env.example`):
-   - `TELEGRAM_BOT_TOKEN`: token do BotFather
-   - `APP_URL`: a URL do deploy, ex.: `https://pt-tawrus.vercel.app`
-   - `CRON_SECRET` e `TELEGRAM_WEBHOOK_SECRET`: duas senhas aleatórias quaisquer
-   Faça *Redeploy* depois de salvar.
-3. **Ligar o webhook** (no seu computador, com as mesmas variáveis no ambiente):
-   ```bash
-   npm install
-   TELEGRAM_BOT_TOKEN=... APP_URL=... TELEGRAM_WEBHOOK_SECRET=... npm run set-webhook
-   ```
-4. **Descobrir seu chat id:** mande `/start` para o bot. Ele responde com o número.
-   Coloque em `TELEGRAM_CHAT_ID` na Vercel e faça *Redeploy*.
+O projeto `pt-tawrus` já está na Vercel, ligado a este repositório (branch `main`).
+
+1. **Criar o bot:** no Telegram, fale com [@BotFather](https://t.me/BotFather), mande `/newbot`,
+   escolha um nome (ex.: PT Tawrus) e um usuário terminado em `bot`. Guarde o token.
+2. **Variáveis na Vercel:** abra o projeto, vá em *Settings → Environment Variables* e adicione:
+   - `TELEGRAM_BOT_TOKEN`: o token do BotFather
+   - `CRON_SECRET`: uma senha longa que você inventa (só letras e números)
+
+   Depois vá em *Deployments*, abra os três pontinhos do último deploy e clique em **Redeploy**.
+3. **Ligar o bot:** abra no navegador
+   `https://<seu-projeto>.vercel.app/api/setup?key=<CRON_SECRET>`.
+   Deve aparecer "✅ Bot ligado".
+4. **Seu chat id:** mande `/start` para o bot. Ele responde com um número. Adicione
+   `TELEGRAM_CHAT_ID` com esse número na Vercel e faça **Redeploy** de novo.
 5. **Testar:** mande `/hoje` para o bot e toque em "▶️ Abrir timer do treino".
 
 Pronto: às 05:00 (Itália) todo dia o treino chega sozinho, inclusive na troca de horário de
-verão/inverno. O cron funciona no plano gratuito (Hobby) da Vercel, mas lá ele pode disparar
-em qualquer minuto entre 05:00 e 05:59. No plano Pro ele dispara no minuto exato.
+verão/inverno. No plano gratuito (Hobby) da Vercel o envio pode chegar em qualquer minuto
+entre 05:00 e 05:59. No plano Pro chega no minuto exato.
 
 ## Desenvolvimento
 

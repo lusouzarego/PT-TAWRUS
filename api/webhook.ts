@@ -1,12 +1,11 @@
 // Webhook do Telegram: comandos /start, /hoje, /semana, /dia <seg..dom>.
-import { sendWorkout, tg, weekText } from "../lib/telegram";
+import { sendWorkout, tg, webhookSecret, weekText } from "../lib/telegram";
 import { dayKeyFor, isDayKey } from "../lib/workout";
 
 type Update = { message?: { chat: { id: number }; text?: string } };
 
 export async function POST(request: Request): Promise<Response> {
-  const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
-  if (!secret || request.headers.get("x-telegram-bot-api-secret-token") !== secret) {
+  if (request.headers.get("x-telegram-bot-api-secret-token") !== webhookSecret()) {
     return new Response("unauthorized", { status: 401 });
   }
 
@@ -24,7 +23,7 @@ export async function POST(request: Request): Promise<Response> {
       parse_mode: "HTML",
       text:
         `Oi! 👋 Seu chat id é <code>${chatId}</code>.\n` +
-        `Coloque esse número em TELEGRAM_CHAT_ID na Vercel para receber o treino todo dia às 5h.\n\n` +
+        `Coloque esse número em TELEGRAM_CHAT_ID na Vercel (e faça Redeploy) para receber o treino todo dia às 5h.\n\n` +
         weekText(),
     });
     return Response.json({ ok: true });

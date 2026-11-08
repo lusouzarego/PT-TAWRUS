@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { buildWorkout, workoutText } from "./workout";
 import { DAY_ORDER, week, type DayKey } from "./plan";
 
@@ -18,8 +19,38 @@ export async function tg<T = unknown>(method: string, body: Record<string, unkno
   return data.result;
 }
 
-function appUrl(): string {
-  return env("APP_URL").replace(/\/$/, "");
+/** URL pública: APP_URL, ou o domínio de produção que a própria Vercel informa. */
+export function appUrl(): string {
+  const explicit = process.env.APP_URL;
+  if (explicit) return explicit.replace(/\/$/, "");
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  if (vercel) return `https://${vercel}`;
+  throw new Error("Configure APP_URL (ex.: https://pt-tawrus.vercel.app)");
+}
+
+/**
+ * Segredo que o Telegram manda no header do webhook. Se TELEGRAM_WEBHOOK_SECRET não
+ * existir, é derivado do token do bot, assim não precisa de mais uma variável.
+ */
+export function webhookSecret(): string {
+  return (
+    process.env.TELEGRAM_WEBHOOK_SECRET ||
+    createHash("sha256").update(`webhook:${env("TELEGRAM_BOT_TOKEN")}`).digest("hex").slice(0, 48)
+  );
+}
+
+/** Liga o bot a este site (webhook) e registra os comandos do menu. */
+export async function setupBot(): Promise<string> {
+  const url = `${appUrl()}/api/webhook`;
+  await tg("setWebhook", { url, secret_token: webhookSecret(), allowed_updates: ["message"] });
+  await tg("setMyCommands", {
+    commands: [
+      { command: "hoje", description: "Treino de hoje" },
+      { command: "semana", description: "Plano da semana" },
+      { command: "dia", description: "Treino de um dia: /dia qui" },
+    ],
+  });
+  return url;
 }
 
 /** Botão que abre o Mini App (timer) já no dia certo. */
