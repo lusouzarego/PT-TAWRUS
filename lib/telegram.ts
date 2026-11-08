@@ -45,10 +45,15 @@ export async function setupBot(): Promise<string> {
   await tg("setWebhook", { url, secret_token: webhookSecret(), allowed_updates: ["message"] });
   await tg("setMyCommands", {
     commands: [
+      { command: "start", description: "Começar e ver o treino de hoje" },
       { command: "hoje", description: "Treino de hoje" },
       { command: "semana", description: "Plano da semana" },
       { command: "dia", description: "Treino de um dia: /dia qui" },
     ],
+  });
+  // Botão fixo ao lado do campo de mensagem que abre o timer (para qualquer pessoa).
+  await tg("setChatMenuButton", {
+    menu_button: { type: "web_app", text: "🏋️ Timer", web_app: { url: appUrl() } },
   });
   return url;
 }

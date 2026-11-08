@@ -54,7 +54,7 @@ Se esquecer o `CRON_SECRET`: crie um novo na Vercel (Secret não pode ser lido d
 | Plano da semana | `lib/plan.ts` | Foco de cada dia, aquecimento, circuito, rodadas e alongamento |
 | Ilustrações | `public/img/ilustracoes/` + `data/ilustracoes.json` | 68 ilustrações da personagem (1 · início → 2 · fim) |
 | Envio diário | `api/cron.ts` (03:00 UTC) + `api/cron-inverno.ts` (04:00 UTC) + `vercel.json` | Só envia o que cair às 05:00 em Roma (resolve o horário de verão). Ver em Vercel → Settings → Cron Jobs |
-| Comandos | `api/webhook.ts` | `/start`, `/hoje`, `/semana`, `/dia qui` |
+| Comandos | `api/webhook.ts` | Abertos para qualquer pessoa: `/start` (boas-vindas + treino de hoje), `/hoje`, `/semana`, `/dia qui`, `/id`. Botão fixo **🏋️ Timer** na conversa. O envio das 5h vai só para `TELEGRAM_CHAT_ID` |
 | Ligar o bot | `api/setup.ts` | `pt-tawrus.vercel.app/api/setup?key=<CRON_SECRET>` registra webhook e comandos |
 | Timer | `public/index.html` | Mini App do Telegram |
 
