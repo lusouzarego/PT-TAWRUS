@@ -68,6 +68,17 @@ export function buildWorkout(day: DayKey): Workout {
   };
 }
 
+/** Busca do vídeo explicativo no YouTube (a mesma do botão no timer). */
+export function youtubeLink(e: Exercise): string {
+  const q = e.youtube || `${e.name} ${e.style === "Pilates Mat" ? "pilates" : "exercício"} como fazer`;
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+}
+
+/** Reel salvo no Instagram; se não tiver, o vídeo explicativo no YouTube. */
+export function videoLink(e: Exercise): string {
+  return e.refs?.[0]?.link ?? youtubeLink(e);
+}
+
 /** Texto do resumo do treino (HTML do Telegram). */
 export function workoutText(w: Workout): string {
   const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -79,8 +90,7 @@ export function workoutText(w: Workout): string {
   for (const b of w.blocks) {
     lines.push(`<b>${esc(b.title)}</b>${b.rounds > 1 ? ` (${b.rounds}x)` : ""}`);
     b.exercises.forEach((e, i) => {
-      const link = e.refs?.[0]?.link;
-      lines.push(`${i + 1}. ${link ? `<a href="${esc(link)}">${esc(e.name)}</a>` : esc(e.name)}`);
+      lines.push(`${i + 1}. <a href="${esc(videoLink(e))}">${esc(e.name)}</a>`);
     });
     lines.push("");
   }
