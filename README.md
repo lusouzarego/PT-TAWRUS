@@ -1,1 +1,105 @@
-# PT-TAWRUS
+# PT Tawrus · Treino do dia no Telegram
+
+Bot de Telegram que **todo dia às 5h** (horário da Itália) manda o treino do dia, com as
+imagens dos exercícios e um botão que abre um **timer de 40 s** dentro do próprio Telegram.
+
+Treinos em casa: funcional, Pilates Mat e sculpt com peso leve, no máximo 1 hora.
+
+## Como funciona
+
+```
+05:00 Itália  Vercel Cron ──▶ /api/cron ──▶ Telegram: fotos + resumo + botão "▶️ Abrir timer"
+                                                              │
+                                    Mini App (public/index.html) ◀┘
+                                    timer 40s · som · vibração · tela acesa
+```
+
+| Peça | Arquivo | O que faz |
+|---|---|---|
+| Catálogo | `lib/exercises.ts` + `lib/instagram.generated.ts` | 74 exercícios da sua pasta "Exercícios" do Instagram + aquecimento, alongamento e Pilates de core |
+| Plano da semana | `lib/plan.ts` | Foco de cada dia, aquecimento, circuito, rodadas e alongamento |
+| Envio diário | `api/cron.ts` | Agendado às 03:00 e 04:00 UTC; só envia o que cair às 05:00 em Roma (resolve horário de verão) |
+| Comandos | `api/webhook.ts` | `/start`, `/hoje`, `/semana`, `/dia qui` |
+| Timer | `public/index.html` | Mini App do Telegram com o timer |
+
+### Semana
+
+| Dia | Foco | Formato |
+|---|---|---|
+| Segunda 💪 | Braços & ombros (sculpt) | 8 exercícios × 3 rodadas |
+| Terça 🦵 | Pernas & posterior | 8 × 3 |
+| Quarta 🔥 | Total body funcional | 8 × 3 |
+| Quinta 🍑 | Glúteos | 8 × 3 |
+| Sexta 🧘‍♀️ | Pilates Mat: core & postura | 10 × 2 |
+| Sábado ✨ | Pilates sculpt: glúteos & braços | 8 × 2 |
+| Domingo 🌿 | Descanso ativo: mobilidade | 8 × 1 |
+
+Cada treino dura ~30–35 min (aquecimento + circuito + alongamento, 40 s de exercício e
+20 s de transição). Para alongar, aumente `rounds` em `lib/plan.ts`. Com 4 rodadas fica em ~40 min.
+
+### Timer (Mini App)
+
+- **▶** inicia os 40 s. Bipes nos últimos 3 segundos e um alarme no fim, que **para sozinho**
+  e já deixa o próximo exercício pronto para você apertar ▶ de novo.
+- **Modo contínuo** (opcional): descansa 20 s e começa o próximo exercício sozinho.
+- **🎬 Ver vídeo** abre o reel do Instagram ali mesmo, sem sair do timer (o vídeo continua
+  tocando enquanto o timer roda). Também tem o passo a passo e os outros vídeos que você
+  salvou do mesmo exercício.
+- Vibra no fim (haptic do Telegram), mantém a tela acesa durante o exercício e permite
+  ver o treino de outros dias.
+- ⚠️ No iPhone o som respeita a chave de silencioso. A vibração funciona mesmo assim.
+
+## Suas referências do Instagram
+
+A pasta "Exercícios" dos seus salvos (99 posts, 336 exercícios) foi exportada para
+`data/instagram-exercicios.json`. O script `npm run importar` agrupa as variações de cada
+exercício e gera `lib/instagram.generated.ts` com nome, dica, passo a passo, equipamento e os
+links dos reels.
+
+- Exercícios de academia (leg press, polia, máquinas, spinning…) ficam de fora: o treino é em casa.
+- Kettlebell vira halter; banco, sofá e step viram cadeira.
+- Para atualizar: exporte de novo, substitua o JSON e rode `npm run importar`.
+
+Na mensagem das 5h, o nome de cada exercício é um link para o reel. No timer, o vídeo abre
+dentro do próprio Mini App. Se um reel não permitir incorporação, use "Abrir no Instagram".
+
+Rode `npm run semana` para ver a semana inteira e conferir se todos os ids existem.
+
+## Colocar no ar (≈15 min)
+
+1. **Criar o bot:** no Telegram, fale com [@BotFather](https://t.me/BotFather) → `/newbot` → guarde o token.
+2. **Deploy na Vercel:** importe este repositório em vercel.com (sem build, é só o padrão).
+   Em *Settings → Environment Variables*, preencha (veja `.env.example`):
+   - `TELEGRAM_BOT_TOKEN`: token do BotFather
+   - `APP_URL`: a URL do deploy, ex.: `https://pt-tawrus.vercel.app`
+   - `CRON_SECRET` e `TELEGRAM_WEBHOOK_SECRET`: duas senhas aleatórias quaisquer
+   Faça *Redeploy* depois de salvar.
+3. **Ligar o webhook** (no seu computador, com as mesmas variáveis no ambiente):
+   ```bash
+   npm install
+   TELEGRAM_BOT_TOKEN=... APP_URL=... TELEGRAM_WEBHOOK_SECRET=... npm run set-webhook
+   ```
+4. **Descobrir seu chat id:** mande `/start` para o bot. Ele responde com o número.
+   Coloque em `TELEGRAM_CHAT_ID` na Vercel e faça *Redeploy*.
+5. **Testar:** mande `/hoje` para o bot e toque em "▶️ Abrir timer do treino".
+
+Pronto: às 05:00 (Itália) todo dia o treino chega sozinho, inclusive na troca de horário de
+verão/inverno. O cron funciona no plano gratuito (Hobby) da Vercel, mas lá ele pode disparar
+em qualquer minuto entre 05:00 e 05:59. No plano Pro ele dispara no minuto exato.
+
+## Desenvolvimento
+
+```bash
+npm install
+npm run typecheck   # checa os tipos
+npm run importar    # regenera o catálogo a partir do JSON do Instagram
+npm run semana      # imprime o plano da semana (e valida os ids)
+npm run enviar-hoje -- qui   # manda o treino de quinta agora (precisa das variáveis)
+npx vercel dev      # roda API + Mini App localmente
+```
+
+## Próximas ideias
+
+- Encaminhar um reel novo para o bot e ele adicionar ao catálogo.
+- Rodízio de exercícios entre semanas (variações A/B) para não repetir sempre o mesmo.
+- Registrar treinos feitos (✅ no fim do timer) e mandar um resumo semanal no domingo.

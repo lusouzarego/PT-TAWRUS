@@ -1,0 +1,21 @@
+{
+  "name": "pt-tawrus",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bot de Telegram que envia o treino do dia às 5h, com Mini App de timer de 40s.",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "semana": "tsx scripts/semana.ts",
+    "enviar-hoje": "tsx scripts/enviar-hoje.ts",
+    "set-webhook": "tsx scripts/set-webhook.ts",
+    "importar": "tsx scripts/importar-instagram.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

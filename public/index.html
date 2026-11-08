@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>PT Tawrus</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: var(--tg-theme-bg-color, #fbf7f4);
+      --card: var(--tg-theme-secondary-bg-color, #ffffff);
+      --text: var(--tg-theme-text-color, #2b2320);
+      --muted: var(--tg-theme-hint-color, #8a7d77);
+      --accent: var(--tg-theme-button-color, #d9727f);
+      --accent-text: var(--tg-theme-button-text-color, #ffffff);
+      --rest: #6fa39a;
+      --track: color-mix(in srgb, var(--muted) 22%, transparent);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-tg]) {
+        --bg: #1b1716; --card: #26201e; --text: #f3ece8; --muted: #a2948e;
+      }
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; background: var(--bg); color: var(--text);
+      font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 480px; margin: 0 auto; padding: 16px 16px 40px; }
+
+    header h1 { font-size: 20px; margin: 0; }
+    header p { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+    .days { display: flex; gap: 6px; margin: 12px 0 16px; overflow-x: auto; }
+    .days button { flex: 1; min-width: 42px; padding: 6px 0; border: 0; border-radius: 10px;
+      background: var(--card); color: var(--muted); font-weight: 600; font-size: 13px; }
+    .days button[aria-current="true"] { background: var(--accent); color: var(--accent-text); }
+
+    .card { background: var(--card); border-radius: 20px; padding: 16px; }
+    .media { aspect-ratio: 4 / 3; border-radius: 14px; overflow: hidden; margin-bottom: 12px;
+      display: grid; place-items: center; font-size: 56px;
+      background: color-mix(in srgb, var(--accent) 12%, var(--card)); }
+    .media img { width: 100%; height: 100%; object-fit: cover; }
+    .label { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+    .card h2 { margin: 4px 0 6px; font-size: 22px; }
+    .cue { margin: 0; color: var(--muted); font-size: 15px; }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .chips span { font-size: 12px; padding: 3px 9px; border-radius: 99px;
+      background: color-mix(in srgb, var(--accent) 14%, transparent); }
+
+    .timer { position: relative; width: 210px; height: 210px; margin: 20px auto 8px; }
+    .timer svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .timer circle { fill: none; stroke-width: 12; }
+    .timer .track { stroke: var(--track); }
+    .timer .bar { stroke: var(--accent); stroke-linecap: round; transition: stroke .3s; }
+    .timer.rest .bar { stroke: var(--rest); }
+    .timer .readout { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+    .timer .secs { font-size: 64px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+    .timer .phase { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+    .controls { display: flex; justify-content: center; align-items: center; gap: 22px; }
+    .controls button { border: 0; background: var(--card); color: var(--text);
+      width: 54px; height: 54px; border-radius: 50%; font-size: 20px; }
+    .controls .play { width: 84px; height: 84px; font-size: 32px;
+      background: var(--accent); color: var(--accent-text); }
+    .toggle { display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin: 16px 0 4px; font-size: 14px; color: var(--muted); }
+    .toggle input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+    h3 { font-size: 15px; margin: 24px 0 8px; }
+    ol { list-style: none; padding: 0; margin: 0; }
+    ol li { display: flex; justify-content: space-between; gap: 8px; padding: 10px 12px;
+      border-radius: 12px; font-size: 15px; }
+    ol li .r { color: var(--muted); font-size: 13px; white-space: nowrap; }
+    ol li.done { color: var(--muted); text-decoration: line-through; }
+    ol li.current { background: var(--card); font-weight: 600; }
+    .done-banner { text-align: center; padding: 32px 16px; }
+    .done-banner div { font-size: 56px; }
+    .error { color: #c0392b; text-align: center; margin-top: 40px; }
+
+    .media.video { aspect-ratio: auto; display: block; background: #fff; }
+    .media iframe { display: block; width: 100%; height: 560px; max-height: 65vh; border: 0; }
+    .actions { display: flex; gap: 8px; margin-top: 12px; }
+    .actions button { flex: 1; border: 0; border-radius: 12px; padding: 10px 8px; font-size: 14px; font-weight: 600;
+      background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--text); }
+    details { margin-top: 10px; font-size: 14px; }
+    details summary { cursor: pointer; color: var(--muted); }
+    details ol, details ul { margin: 8px 0 0; padding-left: 20px; }
+    details ol { list-style: decimal; }
+    details ol li, details ul li { display: list-item; padding: 3px 0; border-radius: 0; font-size: 14px; }
+    details a { color: var(--accent); }
+  </style>
+</head>
+<body>
+<main id="app"><p class="label" style="text-align:center;margin-top:40px">Carregando treino…</p></main>
+
+<script>
+(() => {
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if (tg && tg.initData !== undefined) {
+    document.documentElement.setAttribute("data-tg", "");
+    tg.ready(); tg.expand();
+  }
+
+  const DAYS = [["seg","Seg"],["ter","Ter"],["qua","Qua"],["qui","Qui"],["sex","Sex"],["sab","Sáb"],["dom","Dom"]];
+  const RADIUS = 92, CIRC = 2 * Math.PI * RADIUS;
+  const ICONS = { "Aquecimento": "🤸‍♀️", "Circuito": "🏋️‍♀️", "Desaquecimento": "🧘‍♀️" };
+  const app = document.getElementById("app");
+
+  let workout, steps = [], idx = 0;
+  let phase = "work";          // "work" | "rest"
+  let running = false, endAt = 0, remainingMs = 0, lastBeep = null;
+  let timerId = null, wakeLock = null, audio = null;
+  let continuous = false, showVideo = false, videoEl = null;
+  try { continuous = localStorage.getItem("continuous") === "1"; } catch (e) {}
+
+  // ── Som ───────────────────────────────────────────────────────────────
+  // O AudioContext é criado no primeiro toque em ▶ (exigência do iOS/Android).
+  function beep(freq, ms, when = 0) {
+    if (!audio) return;
+    const t = audio.currentTime + when;
+    const osc = audio.createOscillator(), gain = audio.createGain();
+    osc.type = "sine"; osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.6, t + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + ms / 1000);
+    osc.connect(gain).connect(audio.destination);
+    osc.start(t); osc.stop(t + ms / 1000 + 0.05);
+  }
+  const tickSound = () => beep(880, 140);
+  const endSound = () => { beep(1320, 250); beep(1320, 250, 0.3); beep(1760, 500, 0.6); };
+  function buzz(kind) {
+    if (tg && tg.HapticFeedback) {
+      kind === "end" ? tg.HapticFeedback.notificationOccurred("success") : tg.HapticFeedback.impactOccurred("light");
+    } else if (navigator.vibrate) {
+      navigator.vibrate(kind === "end" ? [200, 100, 200, 100, 400] : 60);
+    }
+  }
+
+  // ── Tela acesa durante o treino ───────────────────────────────────────
+  async function keepAwake(on) {
+    try {
+      if (on && !wakeLock && navigator.wakeLock) wakeLock = await navigator.wakeLock.request("screen");
+      if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+    } catch (e) {}
+  }
+
+  // ── Timer ─────────────────────────────────────────────────────────────
+  const duration = () => (phase === "work" ? workout.workSeconds : workout.restSeconds) * 1000;
+
+  function start() {
+    if (!audio) {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (Ctx) audio = new Ctx();
+    }
+    if (audio && audio.state === "suspended") audio.resume();
+    if (idx >= steps.length) return;
+    if (remainingMs <= 0) remainingMs = duration();
+    endAt = performance.now() + remainingMs;
+    running = true; lastBeep = null;
+    keepAwake(true);
+    clearInterval(timerId);
+    timerId = setInterval(tick, 100);
+    render();
+  }
+
+  function pause() {
+    remainingMs = Math.max(0, endAt - performance.now());
+    running = false; clearInterval(timerId);
+    keepAwake(false);
+    render();
+  }
+
+  function stopAndReset() {
+    running = false; clearInterval(timerId);
+    phase = "work"; remainingMs = 0;
+  }
+
+  function tick() {
+    const left = endAt - performance.now();
+    const s = Math.ceil(left / 1000);
+    if (s <= 3 && s >= 1 && lastBeep !== s) { lastBeep = s; tickSound(); buzz("tick"); }
+    if (left <= 0) return finishPhase();
+    updateTimer(left);
+  }
+
+  function finishPhase() {
+    clearInterval(timerId);
+    if (phase === "work") {
+      endSound(); buzz("end");
+      idx++; showVideo = false;
+      if (idx >= steps.length) { running = false; keepAwake(false); return render(); }
+      if (continuous && workout.restSeconds > 0) {
+        phase = "rest"; remainingMs = 0; return start();
+      }
+      stopAndReset(); keepAwake(false);
+      return render();
+    }
+    // Fim do descanso no modo contínuo: começa o próximo exercício sozinho.
+    tickSound(); phase = "work"; remainingMs = 0; start();
+  }
+
+  function go(to) {
+    stopAndReset(); keepAwake(false); showVideo = false;
+    idx = Math.max(0, Math.min(steps.length - 1, to));
+    render();
+  }
+
+  // ── Vídeos do Instagram ───────────────────────────────────────────────
+  // O embed público toca dentro do timer; "Abrir no Instagram" abre o app/navegador.
+  function embedUrl(link) {
+    const m = String(link).match(/instagram\.com\/(?:reel|reels|p|tv)\/([^/?#]+)/);
+    return m ? `https://www.instagram.com/p/${m[1]}/embed/` : link;
+  }
+  function openLink(url) {
+    if (tg && tg.openLink) tg.openLink(url); else window.open(url, "_blank", "noopener");
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  function updateTimer(leftMs) {
+    const total = duration();
+    const left = leftMs ?? (running ? endAt - performance.now() : (remainingMs || total));
+    const secs = document.querySelector(".secs"), bar = document.querySelector(".bar");
+    if (!secs) return;
+    secs.textContent = Math.max(0, Math.ceil(left / 1000));
+    bar.style.strokeDashoffset = String(CIRC * (1 - Math.max(0, left) / total));
+  }
+
+  function render() {
+    const dayButtons = DAYS.map(([k, l]) =>
+      `<button data-day="${k}" aria-current="${k === workout.day}">${l}</button>`).join("");
+    const head = `<header><h1>${esc(workout.emoji)} ${esc(workout.name)}: ${esc(workout.focus)}</h1>
+      <p>~${workout.estimatedMinutes} min · ${workout.workSeconds}s por exercício</p></header>
+      <nav class="days">${dayButtons}</nav>`;
+
+    if (idx >= steps.length) {
+      app.innerHTML = head + `<section class="card done-banner"><div>🎉</div>
+        <h2>Treino concluído!</h2><p class="cue">Arrasou. Beba água e alongue bem.</p>
+        <div class="controls" style="margin-top:16px"><button class="play" id="restart" aria-label="Recomeçar">↺</button></div></section>`;
+      document.getElementById("restart").onclick = () => go(0);
+      bindDays(); return;
+    }
+
+    const st = steps[idx], ex = st.ex;
+    const showing = phase === "rest" ? "Descanso · a seguir" : `${st.block}${st.rounds > 1 ? ` · rodada ${st.round}/${st.rounds}` : ""}`;
+    const ref = ex.refs && ex.refs[0];
+    const media = showVideo && ref
+      ? `<span id="video-slot"></span>`
+      : ex.image
+      ? `<img src="${esc(ex.image)}" alt="${esc(ex.name)}">`
+      : `<span aria-hidden="true">${ICONS[st.block] || "💪"}</span>`;
+    const actions = ref ? `<div class="actions">
+        <button id="video">${showVideo ? "✕ Fechar vídeo" : "🎬 Ver vídeo"}</button>
+        <button data-link="${esc(ref.link)}">Abrir no Instagram ↗</button></div>` : "";
+    const stepsHtml = ex.steps && ex.steps.length
+      ? `<details><summary>Passo a passo</summary><ol>${ex.steps.map((x) => `<li>${esc(x)}</li>`).join("")}</ol></details>` : "";
+    const others = ex.refs && ex.refs.length > 1
+      ? `<details><summary>Outros vídeos que você salvou (${ex.refs.length - 1})</summary><ul>${ex.refs.slice(1).map((r) =>
+          `<li><a href="#" data-link="${esc(r.link)}">${esc(r.title)}</a> · @${esc(r.author)}</li>`).join("")}</ul></details>` : "";
+    const chips = ex.equipment.filter((e) => e !== "nenhum").map((e) => `<span>${esc(e)}</span>`).join("");
+
+    const list = steps.map((s, i) =>
+      `<li data-i="${i}" class="${i < idx ? "done" : i === idx ? "current" : ""}">
+        <span>${esc(s.ex.name)}</span><span class="r">${esc(s.block)}${s.rounds > 1 ? ` ${s.round}/${s.rounds}` : ""}</span></li>`).join("");
+
+    app.innerHTML = head + `
+      <section class="card">
+        <div class="media${showVideo && ref ? " video" : ""}">${media}</div>
+        <div class="label">${esc(showing)} · ${idx + 1}/${steps.length}</div>
+        <h2>${esc(ex.name)}</h2>
+        <p class="cue">${esc(ex.cue)}</p>
+        ${chips ? `<div class="chips">${chips}</div>` : ""}
+        ${actions}${stepsHtml}${others}
+      </section>
+      <div class="timer ${phase === "rest" ? "rest" : ""}">
+        <svg viewBox="0 0 210 210"><circle class="track" cx="105" cy="105" r="${RADIUS}"/>
+          <circle class="bar" cx="105" cy="105" r="${RADIUS}" stroke-dasharray="${CIRC}" stroke-dashoffset="0"/></svg>
+        <div class="readout"><div class="secs"></div><div class="phase">${phase === "rest" ? "descanso" : running ? "vai!" : "pronta?"}</div></div>
+      </div>
+      <div class="controls">
+        <button id="prev" aria-label="Anterior">⏮</button>
+        <button class="play" id="play" aria-label="${running ? "Pausar" : "Iniciar"}">${running ? "⏸" : "▶"}</button>
+        <button id="next" aria-label="Próximo">⏭</button>
+      </div>
+      <label class="toggle"><input type="checkbox" id="cont" ${continuous ? "checked" : ""}>
+        Modo contínuo (descansa ${workout.restSeconds}s e segue sozinho)</label>
+      <h3>Treino de hoje</h3><ol>${list}</ol>`;
+
+    // O iframe é reaproveitado entre renders para o vídeo não recomeçar no ▶/⏸.
+    const slot = document.getElementById("video-slot");
+    if (slot) {
+      const src = embedUrl(ref.link);
+      if (!videoEl || videoEl.dataset.src !== src) {
+        videoEl = document.createElement("iframe");
+        videoEl.dataset.src = src; videoEl.src = src;
+        videoEl.title = `Vídeo: ${ex.name}`; videoEl.allowFullscreen = true;
+      }
+      slot.replaceWith(videoEl);
+    }
+
+    updateTimer();
+    document.getElementById("play").onclick = () => (running ? pause() : start());
+    document.getElementById("prev").onclick = () => go(idx - 1);
+    document.getElementById("next").onclick = () => go(idx + 1);
+    document.getElementById("cont").onchange = (e) => {
+      continuous = e.target.checked;
+      try { localStorage.setItem("continuous", continuous ? "1" : "0"); } catch (err) {}
+    };
+    app.querySelectorAll("ol li[data-i]").forEach((li) => (li.onclick = () => go(Number(li.dataset.i))));
+    const vbtn = document.getElementById("video");
+    if (vbtn) vbtn.onclick = () => { showVideo = !showVideo; render(); };
+    app.querySelectorAll("[data-link]").forEach((el) => (el.onclick = (e) => { e.preventDefault(); openLink(el.dataset.link); }));
+    bindDays();
+  }
+
+  function bindDays() {
+    app.querySelectorAll(".days button").forEach((b) => (b.onclick = () => load(b.dataset.day)));
+  }
+
+  // ── Dados ─────────────────────────────────────────────────────────────
+  async function load(day) {
+    stopAndReset(); keepAwake(false);
+    const q = day ? `?day=${encodeURIComponent(day)}` : "";
+    try {
+      const res = await fetch(`/api/workout${q}`);
+      if (!res.ok) throw new Error(res.status);
+      workout = await res.json();
+    } catch (e) {
+      app.innerHTML = `<p class="error">Não consegui carregar o treino. Tente de novo.</p>`;
+      return;
+    }
+    steps = [];
+    for (const b of workout.blocks)
+      for (let r = 1; r <= b.rounds; r++)
+        for (const ex of b.exercises) steps.push({ block: b.title, round: r, rounds: b.rounds, ex });
+    idx = 0;
+    history.replaceState(null, "", `?day=${workout.day}`);
+    render();
+  }
+
+  load(new URLSearchParams(location.search).get("day"));
+})();
+</script>
+</body>
+</html>
