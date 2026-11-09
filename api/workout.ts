@@ -15,7 +15,12 @@ export async function GET(request: Request): Promise<Response> {
   const param = new URL(request.url).searchParams.get("day");
   const day = isDayKey(param) ? param : dayKeyFor();
   const workout = buildWorkout(day);
-  return Response.json(isOwner(userId) ? workout : withoutInstagram(workout), {
+  const payload = {
+    ...(isOwner(userId) ? workout : withoutInstagram(workout)),
+    // O Mini App só mostra "Compartilhar na comunidade" quando o grupo está configurado.
+    community: Boolean(process.env.COMUNIDADE_CHAT_ID),
+  };
+  return Response.json(payload, {
     headers: { "cache-control": "no-store" },
   });
 }

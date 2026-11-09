@@ -40,6 +40,7 @@ no ambiente **Production**. Depois de mudar qualquer uma, faça **Deployments �
 | `PAGAMENTO_SATISPAY` | recomendada | Seu número/ID do Satispay, mostrado para quem pede acesso. **Valor só na Vercel** |
 | `PAGAMENTO_IBAN` | recomendada | Seu IBAN para transferência. **Valor só na Vercel** |
 | `PAGAMENTO_TITULAR` | recomendada | Nome do titular da conta. **Valor só na Vercel** |
+| `COMUNIDADE_CHAT_ID` | opcional | ID do grupo da comunidade no Telegram (mande `/id` dentro do grupo). Liga o "Compartilhar na comunidade" do check-in |
 | `KV_REST_API_URL` e `KV_REST_API_TOKEN` | sim, para assinaturas | Criadas automaticamente ao conectar o **Upstash Redis** (Vercel → Storage). Guardam os assinantes |
 
 Se esquecer o `CRON_SECRET`: crie um novo na Vercel (Secret não pode ser lido de volta), faça Redeploy e pronto.
@@ -115,6 +116,20 @@ YouTube. O timer só abre pelo Telegram, para quem tem acesso (confere o `initDa
 **Banco de assinantes:** Vercel → pt-tawrus → **Storage** → **Create Database** → **Upstash
 (Redis)** → plano gratuito → conectar ao projeto → Redeploy. Sem ele, quem não é a dona recebe
 "em configuração" e a dona é avisada.
+
+## Check-in do treino
+
+No fim do treino, a tela "Treino concluído" tem **📸 Fazer check-in**: a pessoa tira ou escolhe uma
+foto e o timer monta um card (foto + "✅ TREINO CONCLUÍDO" + treino + data + selo COOL MOMS CLUB).
+
+- **🔒 Guardar só pra mim:** o bot manda o card na conversa privada dela (diário de treinos), com a
+  contagem "🔥 Nº treino concluído" (guardada no Redis, uma vez por dia).
+- **💚 Compartilhar na comunidade:** além disso, o bot posta o card no grupo (`COMUNIDADE_CHAT_ID`)
+  com "Fulana concluiu o treino de hoje! Mandem um ❤️🔥". As reações são as do próprio Telegram.
+
+**Ligar a comunidade:** crie um grupo no Telegram → adicione o @pt_tawrus_bot como **administrador**
+→ mande `/id` no grupo → coloque o número em `COMUNIDADE_CHAT_ID` na Vercel → Redeploy.
+No grupo o bot não responde às conversas, só posta os check-ins.
 
 ## Manutenção
 

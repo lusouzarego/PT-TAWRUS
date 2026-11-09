@@ -82,7 +82,14 @@
     ol li.done { color: var(--muted); text-decoration: line-through; }
     ol li.current { background: var(--card); font-weight: 600; }
     .done-banner { text-align: center; padding: 32px 16px; }
-    .done-banner div { font-size: 56px; }
+    .done-banner > div:first-child { font-size: 56px; }
+    .btn-main { display: block; width: 100%; border: 0; border-radius: 14px; padding: 14px; margin-top: 12px;
+      font-size: 16px; font-weight: 700; background: var(--accent); color: var(--accent-text); }
+    .btn-soft { display: block; width: 100%; border: 0; border-radius: 14px; padding: 12px; margin-top: 10px;
+      font-size: 15px; font-weight: 600; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--text); }
+    .btn-link { border: 0; background: none; color: var(--muted); font-size: 14px; margin-top: 14px; text-decoration: underline; }
+    .ci-preview { width: 100%; border-radius: 16px; margin-top: 12px; display: block; }
+    .ci-note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
     .error { color: #c0392b; text-align: center; margin-top: 40px; }
 
     .media img.ilus { object-fit: contain; background: #fff; }
@@ -244,6 +251,101 @@
     if (tg && tg.openLink) tg.openLink(url); else window.open(url, "_blank", "noopener");
   }
 
+  // ── Check-in do treino concluído (estilo GymRats) ─────────────────────
+  // A pessoa tira/escolhe uma foto, o app monta o card com a marca e envia para o servidor,
+  // que manda o card na conversa privada dela e, se ela quiser, no grupo da comunidade.
+  let checkin = { stage: "idle", image: null, msg: "" };
+
+  function checkinHtml() {
+    const c = checkin;
+    if (c.stage === "preview" || c.stage === "sending") {
+      const busy = c.stage === "sending" ? "disabled" : "";
+      return `<h2>Seu check-in 📸</h2>
+        <img class="ci-preview" src="${c.image}" alt="Card do check-in">
+        <button class="btn-main" id="ci-private" ${busy}>${c.stage === "sending" ? "Enviando…" : "🔒 Guardar só pra mim"}</button>
+        ${workout.community ? `<button class="btn-soft" id="ci-share" ${busy}>💚 Compartilhar na comunidade</button>` : ""}
+        <button class="btn-link" id="ci-retake" ${busy}>📷 Tirar outra foto</button>
+        <p class="ci-note">${workout.community ? "Na comunidade as outras mães podem reagir com ❤️🔥." : "O card vai para a sua conversa com o bot, como um diário dos seus treinos."}</p>`;
+    }
+    if (c.stage === "done") {
+      return `<div>✅</div><h2>Check-in feito!</h2><p class="cue">${esc(c.msg)}</p>
+        <button class="btn-link" id="restart">↺ Refazer o treino</button>`;
+    }
+    return `<div>🎉</div><h2>Treino concluído!</h2>
+      <p class="cue">Arrasou! Registre o seu treino de hoje.</p>
+      <button class="btn-main" id="ci-start">📸 Fazer check-in</button>
+      ${c.msg ? `<p class="error">${esc(c.msg)}</p>` : ""}
+      <button class="btn-link" id="restart">↺ Refazer o treino</button>
+      <input type="file" id="ci-file" accept="image/*" hidden>`;
+  }
+
+  function bindCheckin() {
+    const $ = (id) => document.getElementById(id);
+    if ($("restart")) $("restart").onclick = () => { checkin = { stage: "idle", image: null, msg: "" }; go(0); };
+    if ($("ci-start")) $("ci-start").onclick = () => $("ci-file").click();
+    if ($("ci-file")) $("ci-file").onchange = (e) => { const f = e.target.files && e.target.files[0]; if (f) makeCard(f); };
+    if ($("ci-retake")) $("ci-retake").onclick = () => { checkin = { stage: "idle", image: null, msg: "" }; render(); setTimeout(() => $("ci-file") && $("ci-file").click(), 50); };
+    if ($("ci-private")) $("ci-private").onclick = () => sendCheckin(false);
+    if ($("ci-share")) $("ci-share").onclick = () => sendCheckin(true);
+  }
+
+  // Monta o card 1080×1350: foto + faixa escura com "TREINO CONCLUÍDO", treino, data e a marca.
+  function makeCard(file) {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const W = 1080, H = 1350, cv = document.createElement("canvas");
+      cv.width = W; cv.height = H;
+      const g = cv.getContext("2d");
+      const k = Math.max(W / img.width, H / img.height);
+      g.drawImage(img, (W - img.width * k) / 2, (H - img.height * k) / 2, img.width * k, img.height * k);
+      const grad = g.createLinearGradient(0, H * 0.55, 0, H);
+      grad.addColorStop(0, "rgba(0,0,0,0)"); grad.addColorStop(1, "rgba(0,0,0,.78)");
+      g.fillStyle = grad; g.fillRect(0, H * 0.55, W, H * 0.45);
+      // Selo da marca no topo
+      g.font = "700 34px -apple-system, Segoe UI, Roboto, sans-serif";
+      const brand = "COOL MOMS CLUB", bw = g.measureText(brand).width + 56;
+      g.fillStyle = "rgba(244,236,226,.92)";
+      g.beginPath(); g.roundRect(48, 48, bw, 72, 36); g.fill();
+      g.fillStyle = "#4f6146"; g.fillText(brand, 76, 97);
+      // Textos
+      const date = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+      g.fillStyle = "#fff";
+      g.font = "800 76px -apple-system, Segoe UI, Roboto, sans-serif";
+      g.fillText("✅ TREINO CONCLUÍDO", 56, H - 210);
+      g.font = "600 46px -apple-system, Segoe UI, Roboto, sans-serif";
+      g.fillText(`${workout.name} · ${workout.focus}`.slice(0, 40), 56, H - 140);
+      g.font = "400 38px -apple-system, Segoe UI, Roboto, sans-serif";
+      g.fillStyle = "rgba(255,255,255,.85)";
+      g.fillText(`${date} · ~${workout.estimatedMinutes} min`, 56, H - 80);
+      URL.revokeObjectURL(url);
+      checkin = { stage: "preview", image: cv.toDataURL("image/jpeg", 0.82), msg: "" };
+      render();
+    };
+    img.onerror = () => { checkin = { stage: "idle", image: null, msg: "Não consegui abrir essa foto. Tente outra." }; render(); };
+    img.src = url;
+  }
+
+  async function sendCheckin(share) {
+    checkin = { ...checkin, stage: "sending" }; render();
+    try {
+      const res = await fetch("/api/checkin", {
+        method: "POST",
+        headers: { "content-type": "application/json", "X-Telegram-Init-Data": (tg && tg.initData) || "" },
+        body: JSON.stringify({ image: checkin.image, share, day: workout.day }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || res.status);
+      const count = data.total ? ` Esse é o seu ${data.total}º treino! 🔥` : "";
+      checkin = { stage: "done", image: null,
+        msg: (data.shared ? "Compartilhado com a comunidade 💚 e salvo na sua conversa com o bot." : "Salvo na sua conversa com o bot.") + count };
+      if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
+    } catch (e) {
+      checkin = { stage: "preview", image: checkin.image, msg: "" };
+      alert("Não consegui enviar o check-in. Tente de novo.");
+    }
+    render();
+  }
+
   // ── Render ────────────────────────────────────────────────────────────
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -264,10 +366,8 @@
       <nav class="days">${dayButtons}</nav>`;
 
     if (idx >= steps.length) {
-      app.innerHTML = head + `<section class="card done-banner"><div>🎉</div>
-        <h2>Treino concluído!</h2><p class="cue">Arrasou. Beba água e alongue bem.</p>
-        <div class="controls" style="margin-top:16px"><button class="play" id="restart" aria-label="Recomeçar">↺</button></div></section>`;
-      document.getElementById("restart").onclick = () => go(0);
+      app.innerHTML = head + `<section class="card done-banner">${checkinHtml()}</section>`;
+      bindCheckin();
       bindDays(); return;
     }
 
@@ -360,6 +460,7 @@
   // ── Dados ─────────────────────────────────────────────────────────────
   async function load(day) {
     stopAndReset(); keepAwake(false);
+    checkin = { stage: "idle", image: null, msg: "" };
     const q = day ? `?day=${encodeURIComponent(day)}` : "";
     try {
       // O servidor confere pelo initData (assinado pelo Telegram) se a pessoa tem acesso.

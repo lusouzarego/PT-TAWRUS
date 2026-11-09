@@ -9,11 +9,18 @@ export async function hasAccess(id: number): Promise<boolean> {
   return isOwner(id) || isActive(await getMember(id));
 }
 
+export type WebAppUser = { id: number; first_name?: string; last_name?: string; username?: string };
+
 /**
  * Confere a assinatura do initData que o Telegram entrega ao Mini App e devolve o id
  * de quem abriu o timer. https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
  */
 export function userFromInitData(initData: string | null, maxAgeSec = 24 * 60 * 60): number | null {
+  return webAppUser(initData, maxAgeSec)?.id ?? null;
+}
+
+/** Usuária do Mini App, se o initData for válido (assinado pelo bot e recente). */
+export function webAppUser(initData: string | null, maxAgeSec = 24 * 60 * 60): WebAppUser | null {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   if (!initData || !botToken) return null;
   const params = new URLSearchParams(initData);
@@ -28,8 +35,8 @@ export function userFromInitData(initData: string | null, maxAgeSec = 24 * 60 * 
   const authDate = Number(params.get("auth_date") || 0);
   if (!authDate || Date.now() / 1000 - authDate > maxAgeSec) return null;
   try {
-    const user = JSON.parse(params.get("user") || "null") as { id?: number } | null;
-    return user?.id ?? null;
+    const user = JSON.parse(params.get("user") || "null") as WebAppUser | null;
+    return user?.id ? user : null;
   } catch {
     return null;
   }

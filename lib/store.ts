@@ -24,7 +24,8 @@ const token = () => process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_R
 export const hasStore = () => Boolean(url() && token());
 
 const memory = new Map<string, string>();
-const memorySet = new Set<string>();
+const memorySets = new Map<string, Set<string>>();
+const mset = (k: string) => memorySets.get(k) ?? memorySets.set(k, new Set()).get(k)!;
 
 async function redis(command: (string | number)[]): Promise<unknown> {
   if (!hasStore()) {
@@ -32,8 +33,9 @@ async function redis(command: (string | number)[]): Promise<unknown> {
     switch (cmd) {
       case "GET": return memory.get(key) ?? null;
       case "SET": memory.set(key, value); return "OK";
-      case "SADD": memorySet.add(value); return 1;
-      case "SMEMBERS": return [...memorySet];
+      case "SADD": { const s = mset(key); const had = s.has(value); s.add(value); return had ? 0 : 1; }
+      case "SMEMBERS": return [...mset(key)];
+      case "SCARD": return mset(key).size;
       default: throw new Error(`memória: comando ${cmd} não suportado`);
     }
   }
@@ -76,3 +78,10 @@ export function extend(m: Member, now = Date.now()): Member {
 
 export const isActive = (m: Member | null, now = Date.now()) =>
   Boolean(m && m.status === "active" && m.expiresAt && m.expiresAt > now);
+
+// ── Check-ins (treinos concluídos) ────────────────────────────────────────
+/** Registra o check-in do dia (data no fuso da Itália) e devolve o total de treinos feitos. */
+export async function addCheckin(id: number, date: string): Promise<number> {
+  await redis(["SADD", `pt:checkins:${id}`, date]);
+  return Number(await redis(["SCARD", `pt:checkins:${id}`]));
+}

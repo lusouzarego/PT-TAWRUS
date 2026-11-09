@@ -239,10 +239,13 @@ export async function POST(request: Request): Promise<Response> {
     const cmd = rawCmd.split("@")[0]; // em grupos: "/hoje@pt_tawrus_bot"
     const owner = isOwner(from.id);
 
+    const isGroup = msg.chat.type === "group" || msg.chat.type === "supergroup";
     if (cmd === "/id") {
-      await send(chatId, `Seu id: <code>${from.id}</code>`);
+      await send(chatId, isGroup ? `ID deste grupo: <code>${chatId}</code>` : `Seu id: <code>${from.id}</code>`);
       return Response.json({ ok: true });
     }
+    // No grupo da comunidade o bot só posta os check-ins; não responde às conversas.
+    if (isGroup) return Response.json({ ok: true });
     if (owner && (await ownerCommand(cmd, arg, chatId))) return Response.json({ ok: true });
 
     if (!owner && !(await hasAccess(from.id))) {
