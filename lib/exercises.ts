@@ -79,7 +79,7 @@ export const exercises: Record<string, Exercise> = Object.fromEntries(
     e.id,
     {
       ...e,
-      illustration: e.id in ilustracoes ? `/img/ilustracoes/${e.id}.jpg` : undefined,
+      illustration: e.id in ilustracoes ? `/img/ilustracoes/${e.id}.jpg?v=2` : undefined,
       tecnica: TECNICA[e.id],
       video: (videos as Record<string, string>)[e.id],
     },

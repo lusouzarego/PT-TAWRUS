@@ -21,7 +21,7 @@ Treinos em casa: funcional, Pilates Mat e sculpt com peso leve, no máximo 1 hor
 | Hospedagem | Vercel → projeto **pt-tawrus** (conta lusouzarego, plano Hobby) | Publica sozinho a cada push na `main` |
 | Site / timer | [pt-tawrus.vercel.app](https://pt-tawrus.vercel.app) | O Mini App do timer |
 | Webhook do bot | `https://pt-tawrus.vercel.app/api/webhook` | Já registrado no Telegram |
-| Ilustrações | Canva → design **"Página de exercícios do app Tawrus"** (68 páginas) | Personagem de referência no Canva: `MAHaVxgNAsk` |
+| Ilustrações | Canva → design **"Página de exercícios do app Tawrus"** (68 páginas) | Personagem de referência no Canva: `MAHaZrNo8IY` (camiseta Cool Moms Club, legging marrom, tênis branco sem marca) |
 
 ### Variáveis de ambiente (Vercel)
 
@@ -60,7 +60,7 @@ Se esquecer o `CRON_SECRET`: crie um novo na Vercel (Secret não pode ser lido d
 |---|---|---|
 | Catálogo | `lib/exercises.ts` + `lib/instagram.generated.ts` | 74 exercícios da pasta "Exercícios" do Instagram + aquecimento, alongamento e Pilates de core |
 | Plano da semana | `lib/plan.ts` | Foco de cada dia, aquecimento, circuito, rodadas e alongamento |
-| Ilustrações | `public/img/ilustracoes/` + `data/ilustracoes.json` | 68 ilustrações da personagem (1 · início → 2 · fim) |
+| Ilustrações | `public/img/ilustracoes/` + `data/ilustracoes.json` | 68 ilustrações da personagem com a roupa Cool Moms Club (1 · início → 2 · fim). A versão antiga (top preto) está listada em `data/ilustracoes-v1.json` |
 | Envio diário | `api/cron.ts` (03:00 UTC) + `api/cron-inverno.ts` (04:00 UTC) + `vercel.json` | Só envia o que cair às 05:00 em Roma (resolve o horário de verão). Ver em Vercel → Settings → Cron Jobs |
 | Comandos e assinatura | `api/webhook.ts` + `lib/store.ts` + `lib/subscriptions.ts` | Acesso por assinatura com aprovação da dona (ver seção *Assinaturas*) |
 | Ligar o bot | `api/setup.ts` | `pt-tawrus.vercel.app/api/setup?key=<CRON_SECRET>` registra webhook e comandos |
@@ -155,7 +155,7 @@ A pasta "Exercícios" dos salvos (99 posts, 336 exercícios) está em `data/inst
 kettlebell vira halter; banco, sofá e step viram cadeira.
 
 ### Ilustração para um exercício novo
-Gere no Canva com a personagem de referência (`MAHaVxgNAsk`), salve o JPG em
+Gere no Canva com a personagem de referência (`MAHaZrNo8IY`), salve o JPG em
 `public/img/ilustracoes/<id>.jpg` e adicione a linha em `data/ilustracoes.json`.
 
 ### Som de notificação no Telegram
