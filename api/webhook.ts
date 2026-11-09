@@ -48,7 +48,7 @@ const renewButton = (id: number) => ({ inline_keyboard: [[{ text: "🔁 Renovar 
 async function welcome(chatId: number, name?: string) {
   await send(
     chatId,
-    `Oi${name ? `, ${esc(name)}` : ""}! 💪 Eu sou o PT Tawrus: treinos em casa de até 1 hora, ` +
+    `Oi${name ? `, ${esc(name)}` : ""}! 💪 Bem-vinda ao Cool Moms Club: treinos em casa de até 1 hora, ` +
       `com timer de 40 s por exercício.\n\n${DISCLAIMER}\n\nAqui vai o treino de hoje 👇\n\n${HELP}`,
     { reply_markup: { inline_keyboard: [[{ text: "▶️ Abrir timer", web_app: { url: appUrl() } }]] } },
   );
@@ -76,8 +76,8 @@ async function requestAccess(from: User, chatId: number) {
   await send(
     chatId,
     renewal
-      ? "🔁 Sua assinatura venceu. Avisei a PT Tawrus que você quer renovar; assim que for confirmado, o acesso volta."
-      : "👋 Oi! O PT Tawrus é por assinatura. Seu pedido de acesso foi enviado e você recebe uma mensagem assim que for aprovado.",
+      ? "🔁 Sua assinatura venceu. Avisei a administradora que você quer renovar; assim que for confirmado, o acesso volta."
+      : "👋 Oi! O Cool Moms Club é por assinatura. Seu pedido de acesso foi enviado e você recebe uma mensagem assim que for aprovado.",
   );
   await send(
     ownerId(),
@@ -102,7 +102,7 @@ async function handleCallback(cb: NonNullable<Update["callback_query"]>) {
     await send(
       m.id,
       action === "ap"
-        ? `🎉 Seu acesso ao PT Tawrus foi aprovado! Válido até ${fmtDate(updated.expiresAt)}.`
+        ? `🎉 Seu acesso ao Cool Moms Club foi aprovado! Válido até ${fmtDate(updated.expiresAt)}.`
         : `🎉 Assinatura renovada! Acesso válido até ${fmtDate(updated.expiresAt)}.`,
     );
     if (action === "ap") {
@@ -112,7 +112,7 @@ async function handleCallback(cb: NonNullable<Update["callback_query"]>) {
   } else if (action === "rj") {
     await saveMember({ ...m, status: "rejected" });
     note = "❌ Recusado";
-    await send(m.id, "Seu pedido de acesso ao PT Tawrus não foi aprovado desta vez.");
+    await send(m.id, "Seu pedido de acesso ao Cool Moms Club não foi aprovado desta vez.");
   } else {
     return answer("Ação desconhecida.");
   }
@@ -194,7 +194,7 @@ export async function POST(request: Request): Promise<Response> {
 
     if (!owner && !(await hasAccess(from.id))) {
       if (!hasStore()) {
-        await send(chatId, "O PT Tawrus ainda está sendo configurado. Tente de novo em breve.");
+        await send(chatId, "O Cool Moms Club ainda está sendo configurado. Tente de novo em breve.");
         await send(ownerId(), `⚠️ ${esc(fullName(from))} tentou entrar, mas o banco de assinantes (Upstash Redis) ainda não está configurado.`);
         return Response.json({ ok: true });
       }
@@ -203,7 +203,7 @@ export async function POST(request: Request): Promise<Response> {
         await saveMember({ ...m, status: "expired" });
       }
       if (m?.status === "removed" && cmd !== "/start") {
-        await send(chatId, "Seu acesso ao PT Tawrus foi encerrado. Mande /start para pedir de novo.");
+        await send(chatId, "Seu acesso ao Cool Moms Club foi encerrado. Mande /start para pedir de novo.");
         return Response.json({ ok: true });
       }
       await requestAccess(from, chatId);

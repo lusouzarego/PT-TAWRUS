@@ -1,4 +1,6 @@
-# PT Tawrus · Treino do dia no Telegram
+# Cool Moms Club · Treino do dia no Telegram
+
+_Projeto PT Tawrus (repositório PT-TAWRUS, Vercel pt-tawrus, bot @pt_tawrus_bot)._
 
 Bot de Telegram que **todo dia às 5h (horário da Itália)** manda o treino do dia, com as
 ilustrações dos exercícios e um botão que abre um **timer de 40 s** dentro do próprio Telegram.
@@ -14,7 +16,7 @@ Treinos em casa: funcional, Pilates Mat e sculpt com peso leve, no máximo 1 hor
 
 | O quê | Onde | Observação |
 |---|---|---|
-| Bot do Telegram | [@pt_tawrus_bot](https://t.me/pt_tawrus_bot) (nome: "PT - Tawrus") | Criado no [@BotFather](https://t.me/BotFather). Para gerar um token novo: `/mybots` → PT - Tawrus → *API Token* → *Revoke* |
+| Bot do Telegram | [@pt_tawrus_bot](https://t.me/pt_tawrus_bot) (nome exibido: "Cool Moms Club") | Criado no [@BotFather](https://t.me/BotFather). Para gerar um token novo: `/mybots` → Cool Moms Club → *API Token* → *Revoke* |
 | Código | [github.com/lusouzarego/PT-TAWRUS](https://github.com/lusouzarego/PT-TAWRUS) | Branch `main` = versão no ar |
 | Hospedagem | Vercel → projeto **pt-tawrus** (conta lusouzarego, plano Hobby) | Publica sozinho a cada push na `main` |
 | Site / timer | [pt-tawrus.vercel.app](https://pt-tawrus.vercel.app) | O Mini App do timer |
@@ -115,7 +117,7 @@ YouTube. O timer só abre pelo Telegram, para quem tem acesso (confere o `initDa
 2. Abra `https://pt-tawrus.vercel.app/api/setup?key=<CRON_SECRET>` — deve aparecer "✅ Bot ligado".
 
 ### Se o token vazar ou você trocar o token
-1. No @BotFather: `/mybots` → PT - Tawrus → *API Token* → *Revoke current token*.
+1. No @BotFather: `/mybots` → Cool Moms Club → *API Token* → *Revoke current token*.
 2. Atualize `TELEGRAM_BOT_TOKEN` na Vercel e faça Redeploy.
 3. Abra o link `/api/setup?key=<CRON_SECRET>` de novo.
 

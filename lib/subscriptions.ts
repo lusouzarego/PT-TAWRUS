@@ -17,7 +17,7 @@ export async function checkExpirations(now = Date.now()): Promise<{ reminded: nu
       await saveMember({ ...m, status: "expired" });
       await tg("sendMessage", {
         chat_id: m.id,
-        text: "⏰ Sua assinatura do PT Tawrus venceu. Mande /start para pedir a renovação.",
+        text: "⏰ Sua assinatura do Cool Moms Club venceu. Mande /start para pedir a renovação.",
       }).catch(() => {});
       await tg("sendMessage", {
         chat_id: ownerId(),
@@ -30,7 +30,7 @@ export async function checkExpirations(now = Date.now()): Promise<{ reminded: nu
       await saveMember({ ...m, reminded: true });
       await tg("sendMessage", {
         chat_id: m.id,
-        text: `💪 Sua assinatura do PT Tawrus vence em ${fmt(m.expiresAt)}. Para continuar, faça o pagamento e avise a PT Tawrus.`,
+        text: `💪 Sua assinatura do Cool Moms Club vence em ${fmt(m.expiresAt)}. Para continuar, faça o pagamento e avise a administradora.`,
       }).catch(() => {});
       reminded++;
     }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-  <title>PT Tawrus</title>
+  <title>Cool Moms Club</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
@@ -136,7 +136,7 @@
     osc.start(t); osc.stop(t + ms / 1000 + 0.05);
   }
   const tickSound = () => beep(880, 140);
-  // Fim dos 40 s: o som do PT Tawrus (sino de ringue + batida). Bipes se ainda não carregou.
+  // Fim dos 40 s: o som do Cool Moms Club (sino de ringue + batida). Bipes se ainda não carregou.
   let endBuffer = null, endLoading = false;
   function loadEndSound() {
     if (!audio || endBuffer || endLoading) return;
@@ -368,7 +368,7 @@
       if (res.status === 401 || res.status === 403) {
         const msg = res.status === 401
           ? "Abra o timer pelo bot <b>@pt_tawrus_bot</b> no Telegram."
-          : "O PT Tawrus é por assinatura. Mande <b>/start</b> para o bot para pedir acesso.";
+          : "O Cool Moms Club é por assinatura. Mande <b>/start</b> para o bot para pedir acesso.";
         app.innerHTML = `<section class="card done-banner"><div>🔒</div><h2>Acesso restrito</h2><p class="cue">${msg}</p></section>`;
         return;
       }

@@ -51,6 +51,14 @@ export async function setupBot(): Promise<string> {
       { command: "dia", description: "Treino de um dia: /dia qui" },
     ],
   });
+  // Nome e descrição que aparecem no perfil do bot.
+  await tg("setMyName", { name: "Cool Moms Club" });
+  await tg("setMyShortDescription", { short_description: "Treinos em casa de até 1 hora, com timer de 40 s. 💪" });
+  await tg("setMyDescription", {
+    description:
+      "Cool Moms Club 💪\nTreinos em casa de até 1 hora: funcional, Pilates Mat e sculpt com peso leve. " +
+      "Ilustração de cada exercício, passo a passo e timer de 40 s.\n\nToque em Iniciar para pedir acesso.",
+  });
   // Menu extra só para a dona, com os comandos de administração.
   const owner = process.env.TELEGRAM_CHAT_ID;
   if (owner) {
