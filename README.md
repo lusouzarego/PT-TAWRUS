@@ -36,6 +36,10 @@ no ambiente **Production**. Depois de mudar qualquer uma, faça **Deployments �
 | `CRON_SECRET` | sim | Senha que você inventou ao configurar. Protege o envio das 5h e o link `/api/setup`. **Anote no arquivo privado de acessos.** |
 | `APP_URL` | não | Se vazio, usa `https://pt-tawrus.vercel.app` automaticamente |
 | `TELEGRAM_WEBHOOK_SECRET` | não | Se vazio, é calculado a partir do token |
+| `PRECO_MENSAL` | não | Valor mostrado na assinatura. Padrão: `€9,90` |
+| `PAGAMENTO_SATISPAY` | recomendada | Seu número/ID do Satispay, mostrado para quem pede acesso. **Valor só na Vercel** |
+| `PAGAMENTO_IBAN` | recomendada | Seu IBAN para transferência. **Valor só na Vercel** |
+| `PAGAMENTO_TITULAR` | recomendada | Nome do titular da conta. **Valor só na Vercel** |
 | `KV_REST_API_URL` e `KV_REST_API_TOKEN` | sim, para assinaturas | Criadas automaticamente ao conectar o **Upstash Redis** (Vercel → Storage). Guardam os assinantes |
 
 Se esquecer o `CRON_SECRET`: crie um novo na Vercel (Secret não pode ser lido de volta), faça Redeploy e pronto.
@@ -92,11 +96,13 @@ No plano gratuito (Hobby) da Vercel o envio pode chegar em qualquer minuto entre
 
 ## Assinaturas
 
-O bot é por assinatura mensal com **aprovação manual**: a pessoa paga por fora
-(PayPal, Revolut, Pix, transferência) e a dona libera pelo Telegram.
+**Cool Moms Club**: comunidade de mães brasileiras na Itália. Assinatura de **€9,90 por mês**,
+paga por **Satispay** ou **IBAN**, com **aprovação manual** da dona pelo Telegram.
 
-1. A pessoa manda `/start` → recebe "pedido enviado".
-2. A dona (`TELEGRAM_CHAT_ID`) recebe **🔔 Novo pedido de acesso** com **✅ Aprovar 30 dias** / **❌ Recusar**.
+1. A pessoa manda `/start` → recebe a apresentação, o preço, os dados de pagamento (das variáveis
+   `PAGAMENTO_*`) e o aviso de privacidade.
+2. Ela paga e **envia a foto ou o PDF do comprovante no bot** → a dona recebe o comprovante
+   encaminhado com **✅ Aprovar 30 dias** / **❌ Recusar**.
 3. Aprovada, a pessoa recebe boas-vindas, o treino de hoje e o timer. Pode usar `/hoje`, `/semana`,
    `/dia`, `/assinatura` e o botão 🏋️ Timer. O envio automático das 5h é só da dona.
 4. 3 dias antes do vencimento ela recebe um lembrete. No vencimento o acesso pausa e a dona recebe

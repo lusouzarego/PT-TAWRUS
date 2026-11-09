@@ -30,7 +30,7 @@ export async function checkExpirations(now = Date.now()): Promise<{ reminded: nu
       await saveMember({ ...m, reminded: true });
       await tg("sendMessage", {
         chat_id: m.id,
-        text: `💪 Sua assinatura do Cool Moms Club vence em ${fmt(m.expiresAt)}. Para continuar, faça o pagamento e avise a administradora.`,
+        text: `💪 Sua assinatura do Cool Moms Club vence em ${fmt(m.expiresAt)}. Para continuar, mande /start para ver os dados de pagamento e envie aqui o comprovante.`,
       }).catch(() => {});
       reminded++;
     }

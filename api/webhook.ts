@@ -13,7 +13,15 @@ import { DAY_MS, extend, getMember, hasStore, isActive, listMembers, saveMember,
 
 type User = { id: number; first_name?: string; last_name?: string; username?: string };
 type Update = {
-  message?: { chat: { id: number; type?: string }; from?: User; text?: string };
+  message?: {
+    message_id: number;
+    chat: { id: number; type?: string };
+    from?: User;
+    text?: string;
+    caption?: string;
+    photo?: unknown[];
+    document?: unknown;
+  };
   callback_query?: { id: string; from: User; data?: string; message?: { chat: { id: number }; message_id: number } };
 };
 
@@ -23,6 +31,26 @@ const HELP =
   "/semana: plano da semana\n" +
   "/dia qui: treino de um dia (seg, ter, qua, qui, sex, sab, dom)\n\n" +
   "O botão 🏋️ Timer, ao lado do campo de mensagem, abre o timer a qualquer momento.";
+
+// Assinatura: valor e dados de pagamento vêm das variáveis da Vercel (o repositório é público).
+//   PRECO_MENSAL (padrão "€9,90"), PAGAMENTO_SATISPAY, PAGAMENTO_IBAN, PAGAMENTO_TITULAR
+const price = () => process.env.PRECO_MENSAL || "€9,90";
+function paymentText(): string {
+  const lines = [`💳 <b>Assinatura: ${esc(price())} por mês</b>`, "", "Formas de pagamento:"];
+  const satispay = process.env.PAGAMENTO_SATISPAY;
+  const iban = process.env.PAGAMENTO_IBAN;
+  const holder = process.env.PAGAMENTO_TITULAR;
+  lines.push(`• <b>Satispay</b>${satispay ? `: <code>${esc(satispay)}</code>` : ""}`);
+  lines.push(`• <b>Transferência (IBAN)</b>${iban ? `: <code>${esc(iban)}</code>` : ""}`);
+  if (holder) lines.push(`  Titular: ${esc(holder)}`);
+  if (!satispay && !iban) lines.push("", "A administradora vai te mandar os dados para o pagamento.");
+  lines.push("", "Depois de pagar, <b>envie aqui a foto ou o PDF do comprovante</b> 📎. Assim que for confirmado, seu acesso é liberado.");
+  return lines.join("\n");
+}
+
+const PRIVACY =
+  "🔒 Para gerenciar a sua assinatura guardamos apenas o seu nome e @ do Telegram. " +
+  "Você pode pedir para apagar a qualquer momento.";
 
 const DISCLAIMER =
   "⚠️ Os treinos são sugestões gerais. Consulte um profissional de saúde antes de começar " +
@@ -58,7 +86,7 @@ async function welcome(chatId: number, name?: string) {
 async function requestAccess(from: User, chatId: number) {
   const existing = await getMember(from.id);
   if (existing?.status === "pending") {
-    await send(chatId, "⏳ Seu pedido de acesso já foi enviado. Você recebe uma mensagem assim que for aprovado.");
+    await send(chatId, `⏳ Seu pedido já foi enviado.\n\n${paymentText()}`);
     return;
   }
   const m: Member = {
@@ -76,14 +104,32 @@ async function requestAccess(from: User, chatId: number) {
   await send(
     chatId,
     renewal
-      ? "🔁 Sua assinatura venceu. Avisei a administradora que você quer renovar; assim que for confirmado, o acesso volta."
-      : "👋 Oi! O Cool Moms Club é por assinatura. Seu pedido de acesso foi enviado e você recebe uma mensagem assim que for aprovado.",
+      ? `🔁 Sua assinatura do Cool Moms Club venceu.\n\n${paymentText()}`
+      : `👋 Oi${from.first_name ? `, ${esc(from.first_name)}` : ""}! Bem-vinda ao <b>Cool Moms Club</b> 💚\n` +
+          "A comunidade de mães brasileiras na Itália: treinos em casa de até 1 hora, com ilustração de cada " +
+          "exercício, passo a passo e timer.\n\n" +
+          `${paymentText()}\n\n${PRIVACY}`,
   );
   await send(
     ownerId(),
     `${renewal ? "🔁 Pedido de renovação" : "🔔 Novo pedido de acesso"}\n${who(m)}`,
     { reply_markup: renewal ? renewButton(m.id) : approveButtons(m.id) },
   );
+}
+
+// ── Comprovante de pagamento ──────────────────────────────────────────────
+async function receipt(from: User, chatId: number, messageId: number) {
+  let m = await getMember(from.id);
+  if (!m) {
+    m = { id: from.id, name: fullName(from), username: from.username, status: "pending", requestedAt: Date.now() };
+    await saveMember(m);
+  }
+  await tg("forwardMessage", { chat_id: ownerId(), from_chat_id: chatId, message_id: messageId });
+  const renewal = isActive(m) || m.status === "expired";
+  await send(ownerId(), `🧾 Comprovante recebido de ${who(m)}`, {
+    reply_markup: renewal ? renewButton(m.id) : approveButtons(m.id),
+  });
+  await send(chatId, "🧾 Comprovante recebido! Assim que a administradora confirmar o pagamento, você recebe uma mensagem. 💚");
 }
 
 // ── Botões da dona ────────────────────────────────────────────────────────
@@ -179,7 +225,14 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     const msg = update.message;
-    if (!msg?.text || !msg.from) return Response.json({ ok: true });
+    if (!msg?.from) return Response.json({ ok: true });
+
+    // Comprovante (foto ou PDF) de quem ainda não tem acesso: encaminha para a dona com os botões.
+    if (!msg.text && (msg.photo || msg.document) && !isOwner(msg.from.id)) {
+      await receipt(msg.from, msg.chat.id, msg.message_id);
+      return Response.json({ ok: true });
+    }
+    if (!msg.text) return Response.json({ ok: true });
     const chatId = msg.chat.id;
     const from = msg.from;
     const [rawCmd, arg] = msg.text.trim().toLowerCase().split(/\s+/);
