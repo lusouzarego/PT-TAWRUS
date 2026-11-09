@@ -362,7 +362,16 @@
     stopAndReset(); keepAwake(false);
     const q = day ? `?day=${encodeURIComponent(day)}` : "";
     try {
-      const res = await fetch(`/api/workout${q}`);
+      // O servidor confere pelo initData (assinado pelo Telegram) se a pessoa tem acesso.
+      const initData = (tg && tg.initData) || "";
+      const res = await fetch(`/api/workout${q}`, { headers: { "X-Telegram-Init-Data": initData } });
+      if (res.status === 401 || res.status === 403) {
+        const msg = res.status === 401
+          ? "Abra o timer pelo bot <b>@pt_tawrus_bot</b> no Telegram."
+          : "O PT Tawrus é por assinatura. Mande <b>/start</b> para o bot para pedir acesso.";
+        app.innerHTML = `<section class="card done-banner"><div>🔒</div><h2>Acesso restrito</h2><p class="cue">${msg}</p></section>`;
+        return;
+      }
       if (!res.ok) throw new Error(res.status);
       workout = await res.json();
     } catch (e) {

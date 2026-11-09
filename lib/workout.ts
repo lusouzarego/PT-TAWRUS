@@ -80,7 +80,8 @@ export function videoLink(e: Exercise): string {
 }
 
 /** Texto do resumo do treino (HTML do Telegram). */
-export function workoutText(w: Workout): string {
+export function workoutText(w: Workout, opts: { instagram?: boolean } = {}): string {
+  const instagram = opts.instagram ?? true;
   const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const lines = [
     `${w.emoji} <b>${esc(w.name)}: ${esc(w.focus)}</b>`,
@@ -90,10 +91,22 @@ export function workoutText(w: Workout): string {
   for (const b of w.blocks) {
     lines.push(`<b>${esc(b.title)}</b>${b.rounds > 1 ? ` (${b.rounds}x)` : ""}`);
     b.exercises.forEach((e, i) => {
-      lines.push(`${i + 1}. <a href="${esc(videoLink(e))}">${esc(e.name)}</a>`);
+      const link = instagram ? videoLink(e) : youtubeLink(e);
+      lines.push(`${i + 1}. <a href="${esc(link)}">${esc(e.name)}</a>`);
     });
     lines.push("");
   }
   lines.push("Toque no nome para ver o vídeo, ou abra o timer aqui embaixo. 👇");
   return lines.join("\n");
+}
+
+/** Versão para assinantes: sem os reels do Instagram (conteúdo de outros criadores). */
+export function withoutInstagram(w: Workout): Workout {
+  return {
+    ...w,
+    blocks: w.blocks.map((b) => ({
+      ...b,
+      exercises: b.exercises.map(({ refs: _refs, variations: _v, ...e }) => e),
+    })),
+  };
 }

@@ -1,6 +1,7 @@
 // Disparado pela Vercel Cron às 03:00 UTC (aqui) e 04:00 UTC (api/cron-inverno.ts).
 // 5h na Itália = 03:00 UTC no horário de verão (CEST) e 04:00 UTC no inverno (CET).
 // Os dois horários são agendados e só envia o que cair às 5h em Roma.
+import { checkExpirations } from "../lib/subscriptions";
 import { sendWorkout } from "../lib/telegram";
 import { TIMEZONE, dayKeyFor } from "../lib/workout";
 
@@ -21,5 +22,6 @@ export async function GET(request: Request): Promise<Response> {
 
   const day = dayKeyFor(now);
   await sendWorkout(process.env.TELEGRAM_CHAT_ID!, day);
-  return Response.json({ ok: true, day });
+  const subs = await checkExpirations(now.getTime());
+  return Response.json({ ok: true, day, ...subs });
 }

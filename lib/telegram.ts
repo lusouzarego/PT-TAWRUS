@@ -42,7 +42,7 @@ export function webhookSecret(): string {
 /** Liga o bot a este site (webhook) e registra os comandos do menu. */
 export async function setupBot(): Promise<string> {
   const url = `${appUrl()}/api/webhook`;
-  await tg("setWebhook", { url, secret_token: webhookSecret(), allowed_updates: ["message"] });
+  await tg("setWebhook", { url, secret_token: webhookSecret(), allowed_updates: ["message", "callback_query"] });
   await tg("setMyCommands", {
     commands: [
       { command: "start", description: "Começar e ver o treino de hoje" },
@@ -51,6 +51,21 @@ export async function setupBot(): Promise<string> {
       { command: "dia", description: "Treino de um dia: /dia qui" },
     ],
   });
+  // Menu extra só para a dona, com os comandos de administração.
+  const owner = process.env.TELEGRAM_CHAT_ID;
+  if (owner) {
+    await tg("setMyCommands", {
+      scope: { type: "chat", chat_id: Number(owner) },
+      commands: [
+        { command: "hoje", description: "Treino de hoje" },
+        { command: "semana", description: "Plano da semana" },
+        { command: "dia", description: "Treino de um dia: /dia qui" },
+        { command: "assinantes", description: "Lista de assinantes e vencimentos" },
+        { command: "renovar", description: "Renovar 30 dias: /renovar <id>" },
+        { command: "remover", description: "Remover acesso: /remover <id>" },
+      ],
+    });
+  }
   // Botão fixo ao lado do campo de mensagem que abre o timer (para qualquer pessoa).
   await tg("setChatMenuButton", {
     menu_button: { type: "web_app", text: "🏋️ Timer", web_app: { url: appUrl() } },
@@ -66,7 +81,11 @@ function timerButton(day: DayKey) {
 }
 
 /** Envia o treino do dia: fotos dos exercícios + resumo com botão do timer. */
-export async function sendWorkout(chatId: string | number, day: DayKey): Promise<void> {
+export async function sendWorkout(
+  chatId: string | number,
+  day: DayKey,
+  opts: { instagram?: boolean } = {},
+): Promise<void> {
   const w = buildWorkout(day);
 
   // Álbum: ilustrações da personagem (início → fim), circuito primeiro, sem repetir,
@@ -88,7 +107,7 @@ export async function sendWorkout(chatId: string | number, day: DayKey): Promise
 
   await tg("sendMessage", {
     chat_id: chatId,
-    text: workoutText(w),
+    text: workoutText(w, opts),
     parse_mode: "HTML",
     link_preview_options: { is_disabled: true },
     reply_markup: timerButton(day),

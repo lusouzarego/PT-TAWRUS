@@ -34,6 +34,7 @@ no ambiente **Production**. Depois de mudar qualquer uma, faça **Deployments �
 | `CRON_SECRET` | sim | Senha que você inventou ao configurar. Protege o envio das 5h e o link `/api/setup`. **Anote no arquivo privado de acessos.** |
 | `APP_URL` | não | Se vazio, usa `https://pt-tawrus.vercel.app` automaticamente |
 | `TELEGRAM_WEBHOOK_SECRET` | não | Se vazio, é calculado a partir do token |
+| `KV_REST_API_URL` e `KV_REST_API_TOKEN` | sim, para assinaturas | Criadas automaticamente ao conectar o **Upstash Redis** (Vercel → Storage). Guardam os assinantes |
 
 Se esquecer o `CRON_SECRET`: crie um novo na Vercel (Secret não pode ser lido de volta), faça Redeploy e pronto.
 
@@ -54,7 +55,7 @@ Se esquecer o `CRON_SECRET`: crie um novo na Vercel (Secret não pode ser lido d
 | Plano da semana | `lib/plan.ts` | Foco de cada dia, aquecimento, circuito, rodadas e alongamento |
 | Ilustrações | `public/img/ilustracoes/` + `data/ilustracoes.json` | 68 ilustrações da personagem (1 · início → 2 · fim) |
 | Envio diário | `api/cron.ts` (03:00 UTC) + `api/cron-inverno.ts` (04:00 UTC) + `vercel.json` | Só envia o que cair às 05:00 em Roma (resolve o horário de verão). Ver em Vercel → Settings → Cron Jobs |
-| Comandos | `api/webhook.ts` | Abertos para qualquer pessoa: `/start` (boas-vindas + treino de hoje), `/hoje`, `/semana`, `/dia qui`, `/id`. Botão fixo **🏋️ Timer** na conversa. O envio das 5h vai só para `TELEGRAM_CHAT_ID` |
+| Comandos e assinatura | `api/webhook.ts` + `lib/store.ts` + `lib/subscriptions.ts` | Acesso por assinatura com aprovação da dona (ver seção *Assinaturas*) |
 | Ligar o bot | `api/setup.ts` | `pt-tawrus.vercel.app/api/setup?key=<CRON_SECRET>` registra webhook e comandos |
 | Timer | `public/index.html` | Mini App do Telegram |
 
@@ -86,6 +87,26 @@ No plano gratuito (Hobby) da Vercel o envio pode chegar em qualquer minuto entre
 - ⚠️ No iPhone o som respeita a chave de silencioso. A vibração funciona mesmo assim.
 
 ---
+
+## Assinaturas
+
+O bot é por assinatura mensal com **aprovação manual**: a pessoa paga por fora
+(PayPal, Revolut, Pix, transferência) e a dona libera pelo Telegram.
+
+1. A pessoa manda `/start` → recebe "pedido enviado".
+2. A dona (`TELEGRAM_CHAT_ID`) recebe **🔔 Novo pedido de acesso** com **✅ Aprovar 30 dias** / **❌ Recusar**.
+3. Aprovada, a pessoa recebe boas-vindas, o treino de hoje e o timer. Pode usar `/hoje`, `/semana`,
+   `/dia`, `/assinatura` e o botão 🏋️ Timer. O envio automático das 5h é só da dona.
+4. 3 dias antes do vencimento ela recebe um lembrete. No vencimento o acesso pausa e a dona recebe
+   **🔁 Renovar 30 dias** (renovar soma 30 dias ao que ainda faltava).
+5. Comandos da dona: `/assinantes`, `/renovar <id>`, `/remover <id>`.
+
+Assinantes não veem os reels do Instagram (conteúdo de outros criadores), só as ilustrações e o
+YouTube. O timer só abre pelo Telegram, para quem tem acesso (confere o `initData` assinado).
+
+**Banco de assinantes:** Vercel → pt-tawrus → **Storage** → **Create Database** → **Upstash
+(Redis)** → plano gratuito → conectar ao projeto → Redeploy. Sem ele, quem não é a dona recebe
+"em configuração" e a dona é avisada.
 
 ## Manutenção
 
