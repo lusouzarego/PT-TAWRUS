@@ -100,7 +100,7 @@
 
     .media img.ilus { object-fit: contain; background: #fff; }
     .media.video { aspect-ratio: auto; display: block; background: #fff; }
-    .media iframe { display: block; width: 100%; height: 560px; max-height: 65vh; border: 0; }
+    .media video { display: block; width: 100%; max-height: 65vh; background: #000; }
     .actions { display: flex; gap: 8px; margin-top: 12px; }
     .actions button { flex: 1; border: 0; border-radius: 12px; padding: 10px 8px; font-size: 14px; font-weight: 600;
       background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--text); }
@@ -110,6 +110,16 @@
     details ol { list-style: decimal; }
     details ol li, details ul li { display: list-item; padding: 3px 0; border-radius: 0; font-size: 14px; }
     details a { color: var(--accent); }
+    /* Ficha técnica: acompanha os quadros 1 e 2 da ilustração. */
+    .ficha { margin-top: 12px; display: grid; gap: 10px; }
+    .passo { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; }
+    .passo .n { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff;
+      display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+    .passo b, .dica b { font-size: 14px; }
+    .ficha ul { margin: 4px 0 0; padding-left: 18px; }
+    .ficha ul li { font-size: 15px; line-height: 1.4; padding: 2px 0; }
+    .dica { background: color-mix(in srgb, var(--rest) 14%, transparent); border-radius: 12px; padding: 10px 12px; }
+    .resp { margin: 0; font-size: 14px; color: var(--muted); }
   </style>
 </head>
 <body>
@@ -247,16 +257,6 @@
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  // ── Vídeos do Instagram ───────────────────────────────────────────────
-  // O embed público toca dentro do timer; "Abrir no Instagram" abre o app/navegador.
-  function embedUrl(link) {
-    const m = String(link).match(/instagram\.com\/(?:reel|reels|p|tv)\/([^/?#]+)/);
-    return m ? `https://www.instagram.com/p/${m[1]}/embed/` : link;
-  }
-  function openLink(url) {
-    if (tg && tg.openLink) tg.openLink(url); else window.open(url, "_blank", "noopener");
-  }
-
   // ── Check-in do treino concluído (estilo GymRats) ─────────────────────
   // A pessoa tira/escolhe uma foto, o app monta o card com a marca e envia para o servidor,
   // que manda o card na conversa privada dela e, se ela quiser, no grupo da comunidade.
@@ -390,28 +390,30 @@
 
     const st = steps[idx], ex = st.ex;
     const showing = phase === "rest" ? "Descanso · a seguir" : `${st.block}${st.rounds > 1 ? ` · rodada ${st.round}/${st.rounds}` : ""}`;
-    const ref = ex.refs && ex.refs[0];
+    // Vídeo próprio do Cool Moms Club (quando existir) ou a ilustração da personagem.
+    // Nada de vídeos externos dentro do app.
     const hasDemo = !!ex.illustration;
-    // Sem ilustração, o vídeo do Instagram já abre sozinho.
-    const showVideo = !!ref && (videoOverride ?? !hasDemo);
+    const showVideo = !!ex.video && (videoOverride ?? true);
     const media = showVideo
       ? `<span id="video-slot"></span>`
       : hasDemo
-      ? `<img class="ilus" src="${esc(ex.illustration)}" alt="${esc(ex.name)}: 1 início, 2 fim do movimento">`
+      ? `<img class="ilus" src="${esc(ex.illustration)}" alt="${esc(ex.name)}: 1 posição inicial, 2 movimento">`
       : ex.image
       ? `<img src="${esc(ex.image)}" alt="${esc(ex.name)}">`
       : `<span aria-hidden="true">${ICONS[st.block] || "💪"}</span>`;
-    const ytQuery = ex.youtube || `${ex.name} ${ex.style === "Pilates Mat" ? "pilates" : "exercício"} como fazer`;
-    const yt = `https://www.youtube.com/results?search_query=${encodeURIComponent(ytQuery)}`;
-    const actions = `<div class="actions">
-        ${ref && hasDemo ? `<button id="video">${showVideo ? "🖼️ Ver ilustração" : "🎬 Vídeo salvo"}</button>` : ""}
-        ${ref ? `<button data-link="${esc(ref.link)}">Instagram ↗</button>` : ""}
-        <button data-link="${esc(yt)}">▶️ YouTube</button></div>`;
-    const stepsHtml = ex.steps && ex.steps.length
+    const actions = ex.video && hasDemo
+      ? `<div class="actions"><button id="video">${showVideo ? "🖼️ Ver ilustração" : "🎬 Ver vídeo"}</button></div>` : "";
+    const li = (xs) => `<ul>${xs.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
+    const t = ex.tecnica;
+    const stepsHtml = t
+      ? `<div class="ficha">
+          <div class="passo"><span class="n">1</span><div><b>Posição inicial</b>${li(t.inicio)}</div></div>
+          <div class="passo"><span class="n">2</span><div><b>Movimento</b>${li(t.movimento)}</div></div>
+          <div class="dica">⚠️ <b>Atenção</b>${li(t.atencao)}</div>
+          ${t.respira ? `<p class="resp">🌬️ ${esc(t.respira)}</p>` : ""}
+        </div>`
+      : ex.steps && ex.steps.length
       ? `<details open><summary>Passo a passo</summary><ol>${ex.steps.map((x) => `<li>${esc(x)}</li>`).join("")}</ol></details>` : "";
-    const others = ex.refs && ex.refs.length > 1
-      ? `<details><summary>Outros vídeos que você salvou (${ex.refs.length - 1})</summary><ul>${ex.refs.slice(1).map((r) =>
-          `<li><a href="#" data-link="${esc(r.link)}">${esc(r.title)}</a> · @${esc(r.author)}</li>`).join("")}</ul></details>` : "";
     const chips = ex.equipment.filter((e) => e !== "nenhum").map((e) => `<span>${esc(e)}</span>`).join("");
 
     const list = steps.map((s, i) =>
@@ -423,9 +425,9 @@
         <div class="media${showVideo ? " video" : ""}">${media}</div>
         <div class="label">${esc(showing)} · ${idx + 1}/${steps.length}</div>
         <h2>${esc(ex.name)}</h2>
-        ${ex.steps && ex.steps.length ? "" : `<p class="cue">${esc(ex.cue)}</p>`}
+        ${t || (ex.steps && ex.steps.length) ? "" : `<p class="cue">${esc(ex.cue)}</p>`}
         ${chips ? `<div class="chips">${chips}</div>` : ""}
-        ${actions}${stepsHtml}${others}
+        ${actions}${stepsHtml}
       </section>
       <div class="dock">
       <div class="timer ${phase === "rest" ? "rest" : ""}">
@@ -443,14 +445,15 @@
         Modo contínuo (descansa ${workout.restSeconds}s e segue sozinho)</label>
       <h3>Treino de hoje</h3><ol>${list}</ol>`;
 
-    // O iframe é reaproveitado entre renders para o vídeo não recomeçar no ▶/⏸.
+    // O vídeo é reaproveitado entre renders para não recomeçar no ▶/⏸.
     const slot = document.getElementById("video-slot");
     if (slot) {
-      const src = embedUrl(ref.link);
-      if (!videoEl || videoEl.dataset.src !== src) {
-        videoEl = document.createElement("iframe");
-        videoEl.dataset.src = src; videoEl.src = src;
-        videoEl.title = `Vídeo: ${ex.name}`; videoEl.allowFullscreen = true;
+      if (!videoEl || videoEl.dataset.src !== ex.video) {
+        videoEl = document.createElement("video");
+        videoEl.dataset.src = ex.video; videoEl.src = ex.video;
+        videoEl.muted = true; videoEl.loop = true; videoEl.autoplay = true; videoEl.playsInline = true;
+        videoEl.setAttribute("playsinline", ""); videoEl.controls = true;
+        videoEl.setAttribute("aria-label", `Vídeo: ${ex.name}`);
       }
       slot.replaceWith(videoEl);
     }
@@ -466,7 +469,6 @@
     app.querySelectorAll("ol li[data-i]").forEach((li) => (li.onclick = () => go(Number(li.dataset.i))));
     const vbtn = document.getElementById("video");
     if (vbtn) vbtn.onclick = () => { videoOverride = !showVideo; render(); };
-    app.querySelectorAll("[data-link]").forEach((el) => (el.onclick = (e) => { e.preventDefault(); openLink(el.dataset.link); }));
     bindDays();
   }
 

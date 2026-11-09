@@ -88,8 +88,15 @@ No plano gratuito (Hobby) da Vercel o envio pode chegar em qualquer minuto entre
 - **▶** inicia os 40 s. Bipes nos últimos 3 segundos e, no fim, o som do PT Tawrus (sino de ringue +
   batida, `public/sons/pt-tawrus.mp3`); **para sozinho** e deixa o próximo exercício pronto.
 - **Modo contínuo** (opcional): descansa 20 s e começa o próximo sozinho.
-- Cada exercício mostra a **ilustração da personagem**, o **passo a passo** e os botões
-  **🎬 Vídeo salvo** (reel do Instagram), **Instagram ↗** e **▶️ YouTube**.
+- Cada exercício mostra a **ilustração da personagem** e a **ficha técnica** (`lib/tecnica.ts`):
+  **1 · Posição inicial** e **2 · Movimento** (os mesmos números dos quadros da ilustração),
+  **⚠️ Atenção** (ângulos, ombros, lombar) e **🌬️ Respiração**.
+- **Sem vídeos externos** no app nem no bot (direitos autorais). Os reels do Instagram ficam só
+  como referência interna em `data/instagram-exercicios.json`.
+- **Vídeos próprios:** grave o vídeo curto do exercício (só a execução, de preferência sem som,
+  MP4 vertical ou horizontal, até ~5 MB), salve em `public/videos/<id>.mp4` e adicione
+  `"<id>": "/videos/<id>.mp4"` em `data/videos.json`. O timer passa a mostrar o vídeo em loop,
+  com o botão **🖼️ Ver ilustração**.
 - Timer fixo no rodapé, vibração no fim e tela acesa durante o exercício.
 - ⚠️ No iPhone o som respeita a chave de silencioso. A vibração funciona mesmo assim.
 
@@ -110,8 +117,8 @@ paga por **Satispay** ou **IBAN**, com **aprovação manual** da dona pelo Teleg
    **🔁 Renovar 30 dias** (renovar soma 30 dias ao que ainda faltava).
 5. Comandos da dona: `/assinantes`, `/renovar <id>`, `/remover <id>`.
 
-Assinantes não veem os reels do Instagram (conteúdo de outros criadores), só as ilustrações e o
-YouTube. O timer só abre pelo Telegram, para quem tem acesso (confere o `initData` assinado).
+Ninguém vê reels do Instagram nem links do YouTube (conteúdo de outros criadores): só as
+ilustrações, a ficha técnica e, no futuro, os vídeos próprios. O timer só abre pelo Telegram, para quem tem acesso (confere o `initData` assinado).
 
 **Banco de assinantes:** Vercel → pt-tawrus → **Storage** → **Create Database** → **Upstash
 (Redis)** → plano gratuito → conectar ao projeto → Redeploy. Sem ele, quem não é a dona recebe

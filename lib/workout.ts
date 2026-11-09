@@ -69,20 +69,9 @@ export function buildWorkout(day: DayKey): Workout {
   };
 }
 
-/** Busca do vídeo explicativo no YouTube (a mesma do botão no timer). */
-export function youtubeLink(e: Exercise): string {
-  const q = e.youtube || `${e.name} ${e.style === "Pilates Mat" ? "pilates" : "exercício"} como fazer`;
-  return `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
-}
-
-/** Reel salvo no Instagram; se não tiver, o vídeo explicativo no YouTube. */
-export function videoLink(e: Exercise): string {
-  return e.refs?.[0]?.link ?? youtubeLink(e);
-}
-
-/** Texto do resumo do treino (HTML do Telegram). */
-export function workoutText(w: Workout, opts: { instagram?: boolean } = {}): string {
-  const instagram = opts.instagram ?? true;
+/** Texto do resumo do treino (HTML do Telegram). Sem links externos: o "como fazer"
+ * fica no timer, com a ilustração da personagem e a ficha técnica. */
+export function workoutText(w: Workout): string {
   const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const lines = [
     `${w.emoji} <b>${esc(w.name)}: ${esc(w.focus)}</b>`,
@@ -93,23 +82,21 @@ export function workoutText(w: Workout, opts: { instagram?: boolean } = {}): str
   ];
   for (const b of w.blocks) {
     lines.push(`<b>${esc(b.title)}</b>${b.rounds > 1 ? ` (${b.rounds}x)` : ""}`);
-    b.exercises.forEach((e, i) => {
-      const link = instagram ? videoLink(e) : youtubeLink(e);
-      lines.push(`${i + 1}. <a href="${esc(link)}">${esc(e.name)}</a>`);
-    });
+    b.exercises.forEach((e, i) => lines.push(`${i + 1}. ${esc(e.name)}`));
     lines.push("");
   }
-  lines.push("Toque no nome para ver o vídeo, ou abra o timer aqui embaixo. 👇");
+  lines.push("Abra o timer aqui embaixo: cada exercício tem a ilustração e o passo a passo. 👇");
   return lines.join("\n");
 }
 
-/** Versão para assinantes: sem os reels do Instagram (conteúdo de outros criadores). */
-export function withoutInstagram(w: Workout): Workout {
+/** O que vai para o Mini App: sem os reels do Instagram nem buscas do YouTube
+ * (conteúdo de outros criadores). Só ilustração, ficha técnica e vídeos próprios. */
+export function paraApp(w: Workout): Workout {
   return {
     ...w,
     blocks: w.blocks.map((b) => ({
       ...b,
-      exercises: b.exercises.map(({ refs: _refs, variations: _v, ...e }) => e),
+      exercises: b.exercises.map(({ refs: _r, variations: _v, youtube: _y, ...e }) => e),
     })),
   };
 }

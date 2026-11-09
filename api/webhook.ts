@@ -153,7 +153,7 @@ async function handleCallback(cb: NonNullable<Update["callback_query"]>) {
     );
     if (action === "ap") {
       await welcome(m.id, m.name.split(" ")[0]);
-      await sendWorkout(m.id, dayKeyFor(), { instagram: false });
+      await sendWorkout(m.id, dayKeyFor());
     }
   } else if (action === "rj") {
     await saveMember({ ...m, status: "rejected" });
@@ -267,14 +267,13 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     // Tem acesso: dona ou assinante ativa.
-    const opts = { instagram: owner };
     if (cmd === "/start") {
       await welcome(chatId, from.first_name);
-      await sendWorkout(chatId, dayKeyFor(), opts);
+      await sendWorkout(chatId, dayKeyFor());
     } else if (cmd === "/hoje") {
-      await sendWorkout(chatId, dayKeyFor(), opts);
+      await sendWorkout(chatId, dayKeyFor());
     } else if (cmd === "/dia" && isDayKey(arg)) {
-      await sendWorkout(chatId, arg, opts);
+      await sendWorkout(chatId, arg);
     } else if (cmd === "/semana" || cmd === "/dia") {
       await send(chatId, weekText());
     } else if (cmd === "/assinatura" && !owner) {

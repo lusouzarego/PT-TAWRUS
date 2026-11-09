@@ -5,7 +5,9 @@
 // aquecimento, alongamento e os clássicos de Pilates Mat para o core.
 
 import ilustracoes from "../data/ilustracoes.json";
+import videos from "../data/videos.json";
 import { instagramExercises } from "./instagram.generated";
+import { TECNICA, type Tecnica } from "./tecnica";
 
 export type Equipment = "nenhum" | "tapete" | "halteres" | "miniband" | "caneleira" | "cadeira";
 
@@ -31,8 +33,12 @@ export type Exercise = {
   image?: string;
   /** Ilustração da personagem (1 · início, 2 · fim), de data/ilustracoes.json. */
   illustration?: string;
-  /** Busca no YouTube para o botão de vídeo explicativo (padrão: nome do exercício). */
+  /** Busca no YouTube (referência interna; não aparece mais para as alunas). */
   youtube?: string;
+  /** Ficha técnica que acompanha a ilustração (lib/tecnica.ts). */
+  tecnica?: Tecnica;
+  /** Vídeo próprio do Cool Moms Club (public/videos/<id>.mp4, listado em data/videos.json). */
+  video?: string;
 };
 
 const complementos: Exercise[] = [
@@ -71,6 +77,11 @@ const complementos: Exercise[] = [
 export const exercises: Record<string, Exercise> = Object.fromEntries(
   [...instagramExercises, ...complementos].map((e) => [
     e.id,
-    { ...e, illustration: e.id in ilustracoes ? `/img/ilustracoes/${e.id}.jpg` : undefined },
+    {
+      ...e,
+      illustration: e.id in ilustracoes ? `/img/ilustracoes/${e.id}.jpg` : undefined,
+      tecnica: TECNICA[e.id],
+      video: (videos as Record<string, string>)[e.id],
+    },
   ]),
 );

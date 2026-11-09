@@ -92,7 +92,6 @@ function timerButton(day: DayKey) {
 export async function sendWorkout(
   chatId: string | number,
   day: DayKey,
-  opts: { instagram?: boolean } = {},
 ): Promise<void> {
   const w = buildWorkout(day);
 
@@ -115,7 +114,7 @@ export async function sendWorkout(
 
   await tg("sendMessage", {
     chat_id: chatId,
-    text: workoutText(w, opts),
+    text: workoutText(w),
     parse_mode: "HTML",
     link_preview_options: { is_disabled: true },
     reply_markup: timerButton(day),
