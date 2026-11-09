@@ -6,21 +6,27 @@
   <title>Cool Moms Club</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
+    /* Cores do Cool Moms Club (logo): verde-sálvia e creme. Fixas, sem herdar o tema do Telegram. */
     :root {
-      --bg: var(--tg-theme-bg-color, #fbf7f4);
-      --card: var(--tg-theme-secondary-bg-color, #ffffff);
-      --text: var(--tg-theme-text-color, #2b2320);
-      --muted: var(--tg-theme-hint-color, #8a7d77);
-      --accent: var(--tg-theme-button-color, #d9727f);
-      --accent-text: var(--tg-theme-button-text-color, #ffffff);
-      --rest: #6fa39a;
+      --bg: #f6f0e8;
+      --card: #fffdf9;
+      --text: #2f3829;
+      --muted: #7c8571;
+      --accent: #6b7f5c;
+      --accent-text: #ffffff;
+      --rest: #c08f7d;
       --track: color-mix(in srgb, var(--muted) 22%, transparent);
     }
     @media (prefers-color-scheme: dark) {
-      :root:not([data-tg]) {
-        --bg: #1b1716; --card: #26201e; --text: #f3ece8; --muted: #a2948e;
+      :root {
+        --bg: #1c2019; --card: #262b22; --text: #eef0e8; --muted: #a4ab9a; --accent: #8ea27d; --accent-text: #15190f;
       }
     }
+    .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .brand img { width: 44px; height: 44px; border-radius: 50%; }
+    .brand span { font-size: 13px; letter-spacing: .14em; color: var(--accent); font-weight: 700; }
+    .frase { font-style: italic; color: var(--text); background: color-mix(in srgb, var(--accent) 12%, transparent);
+      border-radius: 14px; padding: 12px 14px; margin: 12px 0 0; font-size: 15px; line-height: 1.45; }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body { margin: 0; background: var(--bg); color: var(--text);
       font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -272,7 +278,8 @@
         <button class="btn-link" id="restart">↺ Refazer o treino</button>`;
     }
     return `<div>🎉</div><h2>Treino concluído!</h2>
-      <p class="cue">Arrasou! Registre o seu treino de hoje.</p>
+      ${workout.phrase ? `<p class="frase">💬 ${esc(workout.phrase)}</p>` : ""}
+      <p class="cue" style="margin-top:12px">Arrasou! Registre o seu treino de hoje.</p>
       <button class="btn-main" id="ci-start">📸 Fazer check-in</button>
       ${c.msg ? `<p class="error">${esc(c.msg)}</p>` : ""}
       <button class="btn-link" id="restart">↺ Refazer o treino</button>
@@ -289,34 +296,44 @@
     if ($("ci-share")) $("ci-share").onclick = () => sendCheckin(true);
   }
 
-  // Monta o card 1080×1350: foto + faixa escura com "TREINO CONCLUÍDO", treino, data e a marca.
+  // Monta o card 1080×1350: foto + faixa verde-escura com a frase do dia, "TREINO CONCLUÍDO",
+  // treino e data, e o logo do Cool Moms Club no canto.
+  const logoImg = new Image(); logoImg.src = "/img/logo.png";
+  function wrap(g, text, maxW) {
+    const words = text.split(" "), lines = []; let line = "";
+    for (const w of words) { const t = line ? line + " " + w : w; if (g.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t; }
+    if (line) lines.push(line);
+    return lines;
+  }
   function makeCard(file) {
     const url = URL.createObjectURL(file), img = new Image();
     img.onload = () => {
       const W = 1080, H = 1350, cv = document.createElement("canvas");
       cv.width = W; cv.height = H;
-      const g = cv.getContext("2d");
+      const g = cv.getContext("2d"), F = "-apple-system, Segoe UI, Roboto, sans-serif";
       const k = Math.max(W / img.width, H / img.height);
       g.drawImage(img, (W - img.width * k) / 2, (H - img.height * k) / 2, img.width * k, img.height * k);
-      const grad = g.createLinearGradient(0, H * 0.55, 0, H);
-      grad.addColorStop(0, "rgba(0,0,0,0)"); grad.addColorStop(1, "rgba(0,0,0,.78)");
-      g.fillStyle = grad; g.fillRect(0, H * 0.55, W, H * 0.45);
-      // Selo da marca no topo
-      g.font = "700 34px -apple-system, Segoe UI, Roboto, sans-serif";
-      const brand = "COOL MOMS CLUB", bw = g.measureText(brand).width + 56;
-      g.fillStyle = "rgba(244,236,226,.92)";
-      g.beginPath(); g.roundRect(48, 48, bw, 72, 36); g.fill();
-      g.fillStyle = "#4f6146"; g.fillText(brand, 76, 97);
-      // Textos
-      const date = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
-      g.fillStyle = "#fff";
-      g.font = "800 76px -apple-system, Segoe UI, Roboto, sans-serif";
+      // Frase do dia (até 3 linhas) para calcular a altura da faixa
+      g.font = `italic 500 40px ${F}`;
+      const frase = workout.phrase ? wrap(g, `“${workout.phrase}”`, W - 112).slice(0, 3) : [];
+      const top = H - 300 - frase.length * 52;
+      const grad = g.createLinearGradient(0, top - 160, 0, H);
+      grad.addColorStop(0, "rgba(32,42,27,0)"); grad.addColorStop(0.35, "rgba(32,42,27,.70)"); grad.addColorStop(1, "rgba(32,42,27,.92)");
+      g.fillStyle = grad; g.fillRect(0, top - 160, W, H - top + 160);
+      // Logo no canto superior
+      if (logoImg.complete && logoImg.naturalWidth) {
+        g.save(); g.shadowColor = "rgba(0,0,0,.25)"; g.shadowBlur = 18;
+        g.drawImage(logoImg, 44, 44, 190, 190); g.restore();
+      }
+      g.fillStyle = "rgba(255,255,255,.95)"; g.font = `italic 500 40px ${F}`;
+      frase.forEach((l, n) => g.fillText(l, 56, top + n * 52));
+      g.fillStyle = "#e3ecd7"; g.font = `800 74px ${F}`;
       g.fillText("✅ TREINO CONCLUÍDO", 56, H - 210);
-      g.font = "600 46px -apple-system, Segoe UI, Roboto, sans-serif";
+      g.fillStyle = "#fff"; g.font = `600 46px ${F}`;
       g.fillText(`${workout.name} · ${workout.focus}`.slice(0, 40), 56, H - 140);
-      g.font = "400 38px -apple-system, Segoe UI, Roboto, sans-serif";
-      g.fillStyle = "rgba(255,255,255,.85)";
-      g.fillText(`${date} · ~${workout.estimatedMinutes} min`, 56, H - 80);
+      const date = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+      g.fillStyle = "rgba(255,255,255,.8)"; g.font = `400 36px ${F}`;
+      g.fillText(`${date} · ~${workout.estimatedMinutes} min · COOL MOMS CLUB`, 56, H - 80);
       URL.revokeObjectURL(url);
       checkin = { stage: "preview", image: cv.toDataURL("image/jpeg", 0.82), msg: "" };
       render();
@@ -361,7 +378,7 @@
   function render() {
     const dayButtons = DAYS.map(([k, l]) =>
       `<button data-day="${k}" aria-current="${k === workout.day}">${l}</button>`).join("");
-    const head = `<header><h1>${esc(workout.emoji)} ${esc(workout.name)}: ${esc(workout.focus)}</h1>
+    const head = `<div class="brand"><img src="/img/logo.png" alt="Cool Moms Club"><span>COOL MOMS CLUB</span></div><header><h1>${esc(workout.emoji)} ${esc(workout.name)}: ${esc(workout.focus)}</h1>
       <p>~${workout.estimatedMinutes} min · ${workout.workSeconds}s por exercício</p></header>
       <nav class="days">${dayButtons}</nav>`;
 

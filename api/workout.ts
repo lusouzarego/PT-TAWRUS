@@ -2,6 +2,7 @@
 // Só responde para quem abriu o timer pelo Telegram e tem acesso (dona ou assinante ativa).
 // O Mini App manda o initData assinado pelo Telegram no header X-Telegram-Init-Data.
 import { hasAccess, isOwner, userFromInitData } from "../lib/access";
+import { fraseDoDia } from "../lib/frases";
 import { buildWorkout, dayKeyFor, isDayKey, withoutInstagram } from "../lib/workout";
 
 export async function GET(request: Request): Promise<Response> {
@@ -19,6 +20,7 @@ export async function GET(request: Request): Promise<Response> {
     ...(isOwner(userId) ? workout : withoutInstagram(workout)),
     // O Mini App só mostra "Compartilhar na comunidade" quando o grupo está configurado.
     community: Boolean(process.env.COMUNIDADE_CHAT_ID),
+    phrase: fraseDoDia(),
   };
   return Response.json(payload, {
     headers: { "cache-control": "no-store" },

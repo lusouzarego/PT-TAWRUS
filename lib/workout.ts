@@ -1,4 +1,5 @@
 import { exercises, type Exercise } from "./exercises";
+import { fraseDoDia } from "./frases";
 import { DAY_ORDER, REST_SECONDS, WORK_SECONDS, week, type DayKey } from "./plan";
 
 export const TIMEZONE = "Europe/Rome";
@@ -86,6 +87,8 @@ export function workoutText(w: Workout, opts: { instagram?: boolean } = {}): str
   const lines = [
     `${w.emoji} <b>${esc(w.name)}: ${esc(w.focus)}</b>`,
     `⏱ ~${w.estimatedMinutes} min · ${w.workSeconds}s por exercício`,
+    "",
+    `💬 <i>${esc(fraseDoDia())}</i>`,
     "",
   ];
   for (const b of w.blocks) {
