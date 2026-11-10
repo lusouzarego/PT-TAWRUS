@@ -126,8 +126,9 @@ ilustrações, a ficha técnica e, no futuro, os vídeos próprios. O timer só 
 
 ## Check-in do treino
 
-No fim do treino, a tela "Treino concluído" tem **📸 Fazer check-in**: a pessoa tira ou escolhe uma
-foto e o timer monta um card (foto + "✅ TREINO CONCLUÍDO" + treino + data + selo COOL MOMS CLUB).
+No fim do treino, a tela "Treino concluído" tem **📷 Tirar foto agora** (abre a câmera frontal
+direto) e **🖼️ Escolher da galeria**. Com a foto, o timer monta um card (foto + "✅ TREINO CONCLUÍDO"
++ treino + data + selo COOL MOMS CLUB). **↺ Trocar a foto** volta para essa escolha.
 
 - **🔒 Guardar só pra mim:** o bot manda o card na conversa privada dela (diário de treinos), com a
   contagem "🔥 Nº treino concluído" (guardada no Redis, uma vez por dia).

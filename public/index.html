@@ -25,8 +25,6 @@
     .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
     .brand img { width: 44px; height: 44px; border-radius: 50%; }
     .brand span { font-size: 13px; letter-spacing: .14em; color: var(--accent); font-weight: 700; }
-    .frase { font-style: italic; color: var(--text); background: color-mix(in srgb, var(--accent) 12%, transparent);
-      border-radius: 14px; padding: 12px 14px; margin: 12px 0 0; font-size: 15px; line-height: 1.45; }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body { margin: 0; background: var(--bg); color: var(--text);
       font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -270,7 +268,7 @@
         <img class="ci-preview" src="${c.image}" alt="Card do check-in">
         <button class="btn-main" id="ci-private" ${busy}>${c.stage === "sending" ? "Enviando…" : "🔒 Guardar só pra mim"}</button>
         ${workout.community ? `<button class="btn-soft" id="ci-share" ${busy}>💚 Compartilhar na comunidade</button>` : ""}
-        <button class="btn-link" id="ci-retake" ${busy}>📷 Tirar outra foto</button>
+        <button class="btn-link" id="ci-retake" ${busy}>↺ Trocar a foto</button>
         <p class="ci-note">${workout.community ? "Na comunidade as outras mães podem reagir com ❤️🔥." : "O card vai para a sua conversa com o bot, como um diário dos seus treinos."}</p>`;
     }
     if (c.stage === "done") {
@@ -278,33 +276,33 @@
         <button class="btn-link" id="restart">↺ Refazer o treino</button>`;
     }
     return `<div>🎉</div><h2>Treino concluído!</h2>
-      ${workout.phrase ? `<p class="frase">💬 ${esc(workout.phrase)}</p>` : ""}
       <p class="cue" style="margin-top:12px">Arrasou! Registre o seu treino de hoje.</p>
-      <button class="btn-main" id="ci-start">📸 Fazer check-in</button>
+      <button class="btn-main" id="ci-camera">📷 Tirar foto agora</button>
+      <button class="btn-soft" id="ci-gallery">🖼️ Escolher da galeria</button>
       ${c.msg ? `<p class="error">${esc(c.msg)}</p>` : ""}
       <button class="btn-link" id="restart">↺ Refazer o treino</button>
+      <input type="file" id="ci-cam-input" accept="image/*" capture="user" hidden>
       <input type="file" id="ci-file" accept="image/*" hidden>`;
   }
 
   function bindCheckin() {
     const $ = (id) => document.getElementById(id);
     if ($("restart")) $("restart").onclick = () => { checkin = { stage: "idle", image: null, msg: "" }; go(0); };
-    if ($("ci-start")) $("ci-start").onclick = () => $("ci-file").click();
-    if ($("ci-file")) $("ci-file").onchange = (e) => { const f = e.target.files && e.target.files[0]; if (f) makeCard(f); };
-    if ($("ci-retake")) $("ci-retake").onclick = () => { checkin = { stage: "idle", image: null, msg: "" }; render(); setTimeout(() => $("ci-file") && $("ci-file").click(), 50); };
+    // Câmera: capture abre a câmera direto (frontal, para a selfie do treino). Galeria: só escolher.
+    if ($("ci-camera")) $("ci-camera").onclick = () => $("ci-cam-input").click();
+    if ($("ci-gallery")) $("ci-gallery").onclick = () => $("ci-file").click();
+    const picked = (e) => { const f = e.target.files && e.target.files[0]; if (f) makeCard(f); };
+    if ($("ci-cam-input")) $("ci-cam-input").onchange = picked;
+    if ($("ci-file")) $("ci-file").onchange = picked;
+    // Trocar a foto: volta para a escolha entre câmera e galeria.
+    if ($("ci-retake")) $("ci-retake").onclick = () => { checkin = { stage: "idle", image: null, msg: "" }; render(); };
     if ($("ci-private")) $("ci-private").onclick = () => sendCheckin(false);
     if ($("ci-share")) $("ci-share").onclick = () => sendCheckin(true);
   }
 
-  // Monta o card 1080×1350: foto + faixa verde-escura com a frase do dia, "TREINO CONCLUÍDO",
+  // Monta o card 1080×1350: foto + faixa verde-escura com "TREINO CONCLUÍDO",
   // treino e data, e o logo do Cool Moms Club no canto.
   const logoImg = new Image(); logoImg.src = "/img/logo.png";
-  function wrap(g, text, maxW) {
-    const words = text.split(" "), lines = []; let line = "";
-    for (const w of words) { const t = line ? line + " " + w : w; if (g.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t; }
-    if (line) lines.push(line);
-    return lines;
-  }
   function makeCard(file) {
     const url = URL.createObjectURL(file), img = new Image();
     img.onload = () => {
@@ -313,10 +311,7 @@
       const g = cv.getContext("2d"), F = "-apple-system, Segoe UI, Roboto, sans-serif";
       const k = Math.max(W / img.width, H / img.height);
       g.drawImage(img, (W - img.width * k) / 2, (H - img.height * k) / 2, img.width * k, img.height * k);
-      // Frase do dia (até 3 linhas) para calcular a altura da faixa
-      g.font = `italic 500 40px ${F}`;
-      const frase = workout.phrase ? wrap(g, `“${workout.phrase}”`, W - 112).slice(0, 3) : [];
-      const top = H - 300 - frase.length * 52;
+      const top = H - 300;
       const grad = g.createLinearGradient(0, top - 160, 0, H);
       grad.addColorStop(0, "rgba(32,42,27,0)"); grad.addColorStop(0.35, "rgba(32,42,27,.70)"); grad.addColorStop(1, "rgba(32,42,27,.92)");
       g.fillStyle = grad; g.fillRect(0, top - 160, W, H - top + 160);
@@ -325,8 +320,6 @@
         g.save(); g.shadowColor = "rgba(0,0,0,.25)"; g.shadowBlur = 18;
         g.drawImage(logoImg, 44, 44, 190, 190); g.restore();
       }
-      g.fillStyle = "rgba(255,255,255,.95)"; g.font = `italic 500 40px ${F}`;
-      frase.forEach((l, n) => g.fillText(l, 56, top + n * 52));
       g.fillStyle = "#e3ecd7"; g.font = `800 74px ${F}`;
       g.fillText("✅ TREINO CONCLUÍDO", 56, H - 210);
       g.fillStyle = "#fff"; g.font = `600 46px ${F}`;
