@@ -36,6 +36,9 @@
     .days button { flex: 1; min-width: 42px; padding: 6px 0; border: 0; border-radius: 10px;
       background: var(--card); color: var(--muted); font-weight: 600; font-size: 13px; }
     .days button[aria-current="true"] { background: var(--accent); color: var(--accent-text); }
+    /* Dia já treinado nesta semana: riscado, com ✓. Tocar reabre o treino. */
+    .days button.feito { text-decoration: line-through; text-decoration-thickness: 2px; opacity: .7; }
+    .days button.feito::before { content: "✓ "; text-decoration: none; display: inline-block; }
 
     .card { background: var(--card); border-radius: 20px; padding: 16px; }
     .media { aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; margin-bottom: 12px;
@@ -132,6 +135,41 @@
   }
 
   const DAYS = [["seg","Seg"],["ter","Ter"],["qua","Qua"],["qui","Qui"],["sex","Sex"],["sab","Sáb"],["dom","Dom"]];
+
+  // ── Treinos feitos na semana ────────────────────────────────────────
+  // Guardados na nuvem do Telegram (CloudStorage, por pessoa, vale em qualquer aparelho)
+  // e com uma cópia no aparelho. Cada treino feito vira a data (Roma) daquele dia da semana.
+  const CS = tg && tg.CloudStorage && tg.isVersionAtLeast && tg.isVersionAtLeast("6.9") ? tg.CloudStorage : null;
+  let feitos = new Set();
+  function romeToday() { return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(new Date()); }
+  function dateOfDay(k) {
+    const d = new Date(romeToday() + "T12:00:00Z");
+    const dow = (d.getUTCDay() + 6) % 7; // 0 = segunda
+    d.setUTCDate(d.getUTCDate() - dow + DAYS.findIndex(([key]) => key === k));
+    return d.toISOString().slice(0, 10);
+  }
+  const isDone = (k) => feitos.has(dateOfDay(k));
+  function loadFeitos() {
+    let local = [];
+    try { local = JSON.parse(localStorage.getItem("feitos") || "[]"); } catch (e) {}
+    feitos = new Set(local);
+    if (!CS) return Promise.resolve();
+    return new Promise((resolve) => {
+      const t = setTimeout(resolve, 1500); // se a nuvem demorar, segue com a cópia local
+      try {
+        CS.getItem("feitos", (err, v) => {
+          try { for (const d of JSON.parse(v || "[]")) feitos.add(d); } catch (e) {}
+          clearTimeout(t); resolve();
+        });
+      } catch (e) { clearTimeout(t); resolve(); }
+    });
+  }
+  function markDone(k) {
+    feitos.add(dateOfDay(k));
+    const s = JSON.stringify([...feitos].sort().slice(-120));
+    try { localStorage.setItem("feitos", s); } catch (e) {}
+    try { if (CS) CS.setItem("feitos", s, () => {}); } catch (e) {}
+  }
   const RADIUS = 92, CIRC = 2 * Math.PI * RADIUS;
   const ICONS = { "Aquecimento": "🤸‍♀️", "Circuito": "🏋️‍♀️", "Desaquecimento": "🧘‍♀️" };
   const app = document.getElementById("app");
@@ -237,7 +275,7 @@
     if (phase === "work") {
       endSound(); buzz("end");
       idx++; videoOverride = null; window.scrollTo({ top: 0, behavior: "smooth" });
-      if (idx >= steps.length) { running = false; keepAwake(false); return render(); }
+      if (idx >= steps.length) { running = false; keepAwake(false); markDone(workout.day); return render(); }
       if (continuous && workout.restSeconds > 0) {
         phase = "rest"; remainingMs = 0; return start();
       }
@@ -266,21 +304,22 @@
       const busy = c.stage === "sending" ? "disabled" : "";
       return `<h2>Seu check-in 📸</h2>
         <img class="ci-preview" src="${c.image}" alt="Card do check-in">
-        <button class="btn-main" id="ci-private" ${busy}>${c.stage === "sending" ? "Enviando…" : "🔒 Guardar só pra mim"}</button>
-        ${workout.community ? `<button class="btn-soft" id="ci-share" ${busy}>💚 Compartilhar na comunidade</button>` : ""}
+        <button class="btn-main" id="ci-share" ${busy}>${c.stage === "sending" ? "Enviando…" : "💚 Compartilhar com o Cool Moms Club"}</button>
+        <button class="btn-soft" id="ci-private" ${busy}>🔒 Enviar só pra mim</button>
+        ${c.msg ? `<p class="error">${esc(c.msg)}</p>` : ""}
         <button class="btn-link" id="ci-retake" ${busy}>↺ Trocar a foto</button>
-        <p class="ci-note">${workout.community ? "Na comunidade as outras mães podem reagir com ❤️🔥." : "O card vai para a sua conversa com o bot, como um diário dos seus treinos."}</p>`;
+        <p class="ci-note">Nos dois casos o card chega na sua conversa com o bot, como um diário dos seus treinos. Compartilhando, ele também vai para o grupo do Cool Moms Club, onde as outras mães reagem com ❤️🔥.</p>`;
     }
     if (c.stage === "done") {
       return `<div>✅</div><h2>Check-in feito!</h2><p class="cue">${esc(c.msg)}</p>
-        <button class="btn-link" id="restart">↺ Refazer o treino</button>`;
+        <button class="btn-link" id="restart">↺ Reabrir o treino</button>`;
     }
     return `<div>🎉</div><h2>Treino concluído!</h2>
       <p class="cue" style="margin-top:12px">Arrasou! Registre o seu treino de hoje.</p>
       <button class="btn-main" id="ci-camera">📷 Tirar foto agora</button>
       <button class="btn-soft" id="ci-gallery">🖼️ Escolher da galeria</button>
       ${c.msg ? `<p class="error">${esc(c.msg)}</p>` : ""}
-      <button class="btn-link" id="restart">↺ Refazer o treino</button>
+      <button class="btn-link" id="restart">↺ Reabrir o treino</button>
       <input type="file" id="ci-cam-input" accept="image/*" capture="user" hidden>
       <input type="file" id="ci-file" accept="image/*" hidden>`;
   }
@@ -343,15 +382,21 @@
         headers: { "content-type": "application/json", "X-Telegram-Init-Data": (tg && tg.initData) || "" },
         body: JSON.stringify({ image: checkin.image, share, day: workout.day }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || res.status);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `erro ${res.status}`);
       const count = data.total ? ` Esse é o seu ${data.total}º treino! 🔥` : "";
-      checkin = { stage: "done", image: null,
-        msg: (data.shared ? "Compartilhado com a comunidade 💚 e salvo na sua conversa com o bot." : "Salvo na sua conversa com o bot.") + count };
+      const where = data.shared
+        ? "Compartilhado com o Cool Moms Club 💚 e salvo na sua conversa com o bot."
+        : share && data.community
+        ? "Salvo na sua conversa com o bot, mas não consegui postar no grupo. Confira se o bot é administrador do grupo."
+        : share
+        ? "Salvo na sua conversa com o bot. O grupo do Cool Moms Club ainda não está ligado: assim que estiver, os check-ins aparecem lá também."
+        : "Salvo na sua conversa com o bot.";
+      checkin = { stage: "done", image: null, msg: where + count };
+      markDone(workout.day);
       if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
     } catch (e) {
-      checkin = { stage: "preview", image: checkin.image, msg: "" };
-      alert("Não consegui enviar o check-in. Tente de novo.");
+      checkin = { stage: "preview", image: checkin.image, msg: `Não consegui enviar o check-in (${e.message}). Tente de novo.` };
     }
     render();
   }
@@ -370,7 +415,7 @@
 
   function render() {
     const dayButtons = DAYS.map(([k, l]) =>
-      `<button data-day="${k}" aria-current="${k === workout.day}">${l}</button>`).join("");
+      `<button data-day="${k}" aria-current="${k === workout.day}"${isDone(k) ? ' class="feito" aria-label="' + l + ', treino feito"' : ""}>${l}</button>`).join("");
     const head = `<div class="brand"><img src="/img/logo.png" alt="Cool Moms Club"><span>COOL MOMS CLUB</span></div><header><h1>${esc(workout.emoji)} ${esc(workout.name)}: ${esc(workout.focus)}</h1>
       <p>~${workout.estimatedMinutes} min · ${workout.workSeconds}s por exercício</p></header>
       <nav class="days">${dayButtons}</nav>`;
@@ -495,12 +540,13 @@
     for (const b of workout.blocks)
       for (let r = 1; r <= b.rounds; r++)
         for (const ex of b.exercises) steps.push({ block: b.title, round: r, rounds: b.rounds, ex });
-    idx = 0;
+    // Dia já treinado: abre direto na tela de concluído (com o botão para reabrir).
+    idx = isDone(workout.day) ? steps.length : 0;
     history.replaceState(null, "", `?day=${workout.day}`);
     render();
   }
 
-  load(new URLSearchParams(location.search).get("day"));
+  loadFeitos().then(() => load(new URLSearchParams(location.search).get("day")));
 })();
 </script>
 </body>

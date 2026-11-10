@@ -130,10 +130,18 @@ No fim do treino, a tela "Treino concluído" tem **📷 Tirar foto agora** (abre
 direto) e **🖼️ Escolher da galeria**. Com a foto, o timer monta um card (foto + "✅ TREINO CONCLUÍDO"
 + treino + data + selo COOL MOMS CLUB). **↺ Trocar a foto** volta para essa escolha.
 
-- **🔒 Guardar só pra mim:** o bot manda o card na conversa privada dela (diário de treinos), com a
-  contagem "🔥 Nº treino concluído" (guardada no Redis, uma vez por dia).
-- **💚 Compartilhar na comunidade:** além disso, o bot posta o card no grupo (`COMUNIDADE_CHAT_ID`)
-  com "Fulana concluiu o treino de hoje! Mandem um ❤️🔥". As reações são as do próprio Telegram.
+- **💚 Compartilhar com o Cool Moms Club:** o bot manda o card na conversa privada dela e posta no
+  grupo (`COMUNIDADE_CHAT_ID`) com "Fulana concluiu o treino de hoje! Mandem um ❤️🔥". As reações
+  são as do próprio Telegram. Se o grupo ainda não estiver ligado, o card vai só para a conversa e
+  o app avisa.
+- **🔒 Enviar só pra mim:** só a conversa privada (diário de treinos).
+- Nos dois casos aparece a contagem "🔥 Nº treino concluído" (guardada no Redis, uma vez por dia).
+  Se o envio falhar, o app mostra o motivo na própria tela.
+
+**Dias feitos:** ao terminar o último exercício, o dia fica marcado na semana (✓ e riscado nos botões
+Seg…Dom). A marcação fica na nuvem do Telegram de cada pessoa (CloudStorage), então vale em qualquer
+aparelho, e zera na semana seguinte. Abrir um dia feito mostra a tela de concluído; **↺ Reabrir o
+treino** começa de novo.
 
 **Ligar a comunidade:** crie um grupo no Telegram → adicione o @pt_tawrus_bot como **administrador**
 → mande `/id` no grupo → coloque o número em `COMUNIDADE_CHAT_ID` na Vercel → Redeploy.

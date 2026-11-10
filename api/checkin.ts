@@ -3,7 +3,7 @@
 // Header X-Telegram-Init-Data: initData do Mini App (identifica e autoriza a pessoa).
 //
 // - Sempre: o card volta para a conversa privada da pessoa com o bot (o diário dela).
-// - share=true e COMUNIDADE_CHAT_ID configurado: o card também vai para o grupo da comunidade,
+// - share=true e COMUNIDADE_CHAT_ID configurado: o card também vai para o grupo do Cool Moms Club,
 //   onde as outras participantes reagem com ❤️🔥.
 import { hasAccess, webAppUser } from "../lib/access";
 import { week } from "../lib/plan";
@@ -36,17 +36,28 @@ export async function POST(request: Request): Promise<Response> {
   const plan = isDayKey(body?.day) ? week[body!.day as keyof typeof week] : null;
   const what = plan ? `${plan.name} · ${plan.focus}` : "Treino do dia";
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: TIMEZONE }).format(new Date());
-  const total = hasStore() ? await addCheckin(user.id, today) : 0;
+  // A contagem é um extra: se o banco falhar, o card vai do mesmo jeito.
+  const total = hasStore() ? await addCheckin(user.id, today).catch((e) => (console.error(e), 0)) : 0;
   const streak = total ? `\n🔥 ${total}º treino concluído` : "";
 
-  await sendPhoto(user.id, photo, `✅ Check-in: ${what}${streak}\n\nSó você vê esta mensagem. 💚`);
+  try {
+    await sendPhoto(user.id, photo, `✅ Check-in: ${what}${streak}\n\nSó você vê esta mensagem. 💚`);
+  } catch (e) {
+    console.error(e);
+    return Response.json({ error: "telegram_privado" }, { status: 502 });
+  }
 
   const group = process.env.COMUNIDADE_CHAT_ID;
   let shared = false;
   if (body?.share && group) {
     const name = user.first_name || "Uma cool mom";
-    await sendPhoto(group, photo, `💪 ${name} concluiu o treino de hoje!\n${what}${streak}\n\nMandem um ❤️🔥 pra ela!`);
-    shared = true;
+    try {
+      await sendPhoto(group, photo, `💪 ${name} concluiu o treino de hoje!\n${what}${streak}\n\nMandem um ❤️🔥 pra ela!`);
+      shared = true;
+    } catch (e) {
+      // O card já está na conversa dela; só o grupo falhou (ex.: bot fora do grupo ou sem permissão).
+      console.error(e);
+    }
   }
-  return Response.json({ ok: true, total, shared });
+  return Response.json({ ok: true, total, shared, community: Boolean(group) });
 }
