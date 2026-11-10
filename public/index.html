@@ -481,7 +481,8 @@
       </div>
       <label class="toggle"><input type="checkbox" id="cont" ${continuous ? "checked" : ""}>
         Modo contínuo (descansa ${workout.restSeconds}s e segue sozinho)</label>
-      <h3>Treino de hoje</h3><ol>${list}</ol>`;
+      <h3>Treino de hoje</h3><ol>${list}</ol>
+      <button class="btn-link" id="mark-done">✓ Já fiz este treino: marcar como feito</button>`;
 
     // O vídeo é reaproveitado entre renders para não recomeçar no ▶/⏸.
     const slot = document.getElementById("video-slot");
@@ -500,6 +501,11 @@
     document.getElementById("play").onclick = () => (running ? pause() : start());
     document.getElementById("prev").onclick = () => go(idx - 1);
     document.getElementById("next").onclick = () => go(idx + 1);
+    // Marcar à mão (ex.: treino feito fora do timer). Vai para a tela de concluído.
+    document.getElementById("mark-done").onclick = () => {
+      stopAndReset(); keepAwake(false); markDone(workout.day); idx = steps.length; render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
     document.getElementById("cont").onchange = (e) => {
       continuous = e.target.checked;
       try { localStorage.setItem("continuous", continuous ? "1" : "0"); } catch (err) {}

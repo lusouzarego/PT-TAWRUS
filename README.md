@@ -142,6 +142,8 @@ direto) e **🖼️ Escolher da galeria**. Com a foto, o timer monta um card (fo
 Seg…Dom). A marcação fica na nuvem do Telegram de cada pessoa (CloudStorage), então vale em qualquer
 aparelho, e zera na semana seguinte. Abrir um dia feito mostra a tela de concluído; **↺ Reabrir o
 treino** começa de novo.
+No fim da lista de exercícios há **✓ Já fiz este treino: marcar como feito**, para marcar um treino
+feito fora do timer.
 
 **Ligar a comunidade:** crie um grupo no Telegram → adicione o @pt_tawrus_bot como **administrador**
 → mande `/id` no grupo → coloque o número em `COMUNIDADE_CHAT_ID` na Vercel → Redeploy.
