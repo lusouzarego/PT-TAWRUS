@@ -377,12 +377,22 @@
     m.querySelectorAll("[data-act]").forEach((el) => (el.onclick = () => {
       const act = el.dataset.act;
       if (act === "retry") return startCamera();
+      if (act === "chat") {
+        // A câmera do Telegram funciona sempre na conversa: o bot transforma a foto em check-in.
+        stopStream();
+        m.innerHTML = `<p>Na conversa com o bot, toque em <b>📎</b> → <b>Câmera</b>, tire a foto e envie.<br>
+          O bot pergunta se você quer <b>compartilhar com o Cool Moms Club</b> ou guardar só pra você. 💚</p>
+          <button data-close>Ir para a conversa</button>`;
+        m.querySelector("[data-close]").onclick = () => { closeCamera(); if (tg && tg.close) tg.close(); };
+        return;
+      }
       const input = document.getElementById(act === "system" ? "ci-cam-input" : "ci-file");
       closeCamera();
       if (input) input.click();
     }));
   }
   const camHelp = (why) => `<p>${why}</p>
+    <button data-act="chat">💬 Tirar a foto pela conversa do bot</button>
     <button data-act="retry">🔄 Tentar de novo</button>
     <button data-act="system">📷 Abrir a câmera do aparelho</button>
     <button data-act="gallery">🖼️ Escolher da galeria</button>`;

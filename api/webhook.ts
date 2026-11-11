@@ -11,7 +11,12 @@ import { hasAccess, isOwner, ownerId } from "../lib/access";
 import { communityId, inviteNote, inviteToCommunity, removeFromCommunity } from "../lib/comunidade";
 import { appUrl, sendWorkout, tg, webhookSecret, weekText } from "../lib/telegram";
 import { dayKeyFor, isDayKey } from "../lib/workout";
-import { DAY_MS, extend, getMember, hasStore, isActive, listMembers, saveMember, type Member } from "../lib/store";
+import { week } from "../lib/plan";
+import {
+  DAY_MS, addCheckin, extend, getMember, getPendingPhoto, hasStore, isActive, listMembers, saveMember,
+  setPendingPhoto, type Member,
+} from "../lib/store";
+import { TIMEZONE } from "../lib/workout";
 
 type User = { id: number; first_name?: string; last_name?: string; username?: string };
 type Update = {
@@ -21,7 +26,7 @@ type Update = {
     from?: User;
     text?: string;
     caption?: string;
-    photo?: unknown[];
+    photo?: { file_id: string }[];
     document?: unknown;
   };
   callback_query?: { id: string; from: User; data?: string; message?: { chat: { id: number }; message_id: number } };
@@ -32,7 +37,8 @@ const HELP =
   "/hoje: treino de hoje\n" +
   "/semana: plano da semana\n" +
   "/dia qui: treino de um dia (seg, ter, qua, qui, sex, sab, dom)\n" +
-  "/comunidade: convite para o grupo do Cool Moms Club\n\n" +
+  "/comunidade: convite para o grupo do Cool Moms Club\n" +
+  "📸 Check-in: mande a foto do fim do treino aqui na conversa (📎 → Câmera)\n\n" +
   "O botão 🏋️ Timer, ao lado do campo de mensagem, abre o timer a qualquer momento.";
 
 // Assinatura: valor e dados de pagamento vêm das variáveis da Vercel (o repositório é público).
@@ -141,9 +147,80 @@ async function receipt(from: User, chatId: number, messageId: number) {
   await send(chatId, "🧾 Comprovante recebido! Assim que a administradora confirmar o pagamento, você recebe uma mensagem. 💚");
 }
 
+// ── Check-in pela conversa ────────────────────────────────────────────────
+// No Android o Telegram não deixa o timer usar a câmera. Então quem tem acesso pode tirar a
+// foto aqui na conversa (📎 → Câmera) e o bot pergunta o que fazer com ela.
+async function photoFromMember(from: User, chatId: number, messageId: number, fileId: string, owner: boolean) {
+  await setPendingPhoto(from.id, { fileId, messageId, at: Date.now() });
+  const rows = [
+    [{ text: "💚 Compartilhar com o Cool Moms Club", callback_data: "ci:share" }],
+    [{ text: "🔒 Guardar só pra mim (check-in)", callback_data: "ci:me" }],
+  ];
+  if (!owner) rows.push([{ text: "🧾 É comprovante de pagamento", callback_data: "ci:pay" }]);
+  await send(chatId, "📸 Recebi sua foto! É o check-in do treino de hoje?", {
+    reply_to_message_id: messageId,
+    reply_markup: { inline_keyboard: rows },
+  });
+}
+
+async function checkinCallback(cb: NonNullable<Update["callback_query"]>, action: string) {
+  const answer = (text: string) => tg("answerCallbackQuery", { callback_query_id: cb.id, text });
+  const user = cb.from;
+  if (!isOwner(user.id) && !(await hasAccess(user.id)) && action !== "pay") return answer("Seu acesso não está ativo.");
+  const p = await getPendingPhoto(user.id);
+  if (!p) return answer("Não achei a foto. Mande de novo, por favor.");
+  const done = (text: string) =>
+    cb.message
+      ? tg("editMessageText", { chat_id: cb.message.chat.id, message_id: cb.message.message_id, parse_mode: "HTML", text })
+      : send(user.id, text);
+
+  if (action === "pay") {
+    await answer("Enviando o comprovante");
+    await done("🧾 Ok, enviei como comprovante de pagamento.");
+    return receipt(user, user.id, p.messageId);
+  }
+
+  const plan = week[dayKeyFor()];
+  const what = `${plan.name} · ${plan.focus}`;
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: TIMEZONE }).format(new Date());
+  const total = hasStore() ? await addCheckin(user.id, today).catch(() => 0) : 0;
+  const streak = total ? `\n🔥 ${total}º treino concluído` : "";
+
+  let shared = false;
+  const group = communityId();
+  if (action === "share" && group) {
+    try {
+      await tg("sendPhoto", {
+        chat_id: group,
+        photo: p.fileId,
+        caption: `💪 ${user.first_name || "Uma cool mom"} concluiu o treino de hoje!\n✅ ${what}${streak}\n\nMandem um ❤️🔥 pra ela!`,
+      });
+      shared = true;
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  await answer(shared ? "Compartilhado! 💚" : "Check-in salvo ✅");
+  await done(
+    `✅ <b>Check-in: ${esc(what)}</b>${streak}\n\n` +
+      (shared
+        ? "Compartilhado no grupo do Cool Moms Club 💚"
+        : action === "share"
+        ? group
+          ? "Salvo aqui, mas não consegui postar no grupo. Já avisei a administradora."
+          : "Salvo aqui. O grupo do Cool Moms Club ainda não está ligado."
+        : "Salvo aqui, só você vê. 💚"),
+  );
+  if (action === "share" && group && !shared) {
+    await send(ownerId(), "⚠️ Não consegui postar um check-in no grupo. Confira se o bot é administrador do grupo.");
+  }
+}
+
 // ── Botões da dona ────────────────────────────────────────────────────────
 async function handleCallback(cb: NonNullable<Update["callback_query"]>) {
   const answer = (text: string) => tg("answerCallbackQuery", { callback_query_id: cb.id, text });
+  const [kind, sub] = (cb.data || "").split(":");
+  if (kind === "ci") return checkinCallback(cb, sub);
   if (!isOwner(cb.from.id)) return answer("Só a administradora pode fazer isso.");
   const [action, raw] = (cb.data || "").split(":");
   const m = await getMember(Number(raw));
@@ -251,9 +328,18 @@ export async function POST(request: Request): Promise<Response> {
     const msg = update.message;
     if (!msg?.from) return Response.json({ ok: true });
 
-    // Comprovante (foto ou PDF) de quem ainda não tem acesso: encaminha para a dona com os botões.
-    if (!msg.text && (msg.photo || msg.document) && !isOwner(msg.from.id)) {
-      await receipt(msg.from, msg.chat.id, msg.message_id);
+    // Fotos e PDFs na conversa privada.
+    const privateChat = msg.chat.type === "private" || msg.chat.type === undefined;
+    if (!msg.text && (msg.photo || msg.document) && privateChat) {
+      const owner = isOwner(msg.from.id);
+      const member = owner || (await hasAccess(msg.from.id));
+      // Quem tem acesso e manda FOTO: check-in (com opção "é comprovante" para quem renova).
+      if (member && msg.photo?.length) {
+        await photoFromMember(msg.from, msg.chat.id, msg.message_id, msg.photo[msg.photo.length - 1].file_id, owner);
+        return Response.json({ ok: true });
+      }
+      // Quem ainda não tem acesso (ou manda PDF): comprovante para a dona com os botões.
+      if (!owner) await receipt(msg.from, msg.chat.id, msg.message_id);
       return Response.json({ ok: true });
     }
     if (!msg.text) return Response.json({ ok: true });

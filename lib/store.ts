@@ -85,3 +85,13 @@ export async function addCheckin(id: number, date: string): Promise<number> {
   await redis(["SADD", `pt:checkins:${id}`, date]);
   return Number(await redis(["SCARD", `pt:checkins:${id}`]));
 }
+
+/** Última foto que a pessoa mandou na conversa, esperando ela escolher o que fazer (check-in). */
+export type PendingPhoto = { fileId: string; messageId: number; at: number };
+export async function setPendingPhoto(id: number, p: PendingPhoto): Promise<void> {
+  await redis(["SET", `pt:foto:${id}`, JSON.stringify(p)]);
+}
+export async function getPendingPhoto(id: number): Promise<PendingPhoto | null> {
+  const raw = (await redis(["GET", `pt:foto:${id}`])) as string | null;
+  return raw ? (JSON.parse(raw) as PendingPhoto) : null;
+}

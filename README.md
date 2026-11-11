@@ -140,6 +140,13 @@ sistema) e **🖼️ Escolher da galeria**. Com a foto, o timer monta um card (f
 - Nos dois casos aparece a contagem "🔥 Nº treino concluído" (guardada no Redis, uma vez por dia).
   Se o envio falhar, o app mostra o motivo na própria tela.
 
+**Check-in pela conversa (funciona em qualquer aparelho):** no Android o Telegram não deixa o timer
+usar a câmera. Então quem tem acesso pode mandar a foto direto na conversa com o bot (📎 → Câmera):
+o bot responde com **💚 Compartilhar com o Cool Moms Club**, **🔒 Guardar só pra mim** e, para
+assinantes, **🧾 É comprovante de pagamento** (para quem manda o comprovante da renovação).
+Quem ainda não tem acesso continua tendo a foto tratada como comprovante. A tela da câmera do timer
+oferece esse caminho quando a câmera falha.
+
 **Dias feitos:** ao terminar o último exercício, o dia fica marcado na semana (✓ e riscado nos botões
 Seg…Dom). A marcação fica na nuvem do Telegram de cada pessoa (CloudStorage), então vale em qualquer
 aparelho, e zera na semana seguinte. Abrir um dia feito mostra a tela de concluído; **↺ Reabrir o
