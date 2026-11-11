@@ -86,8 +86,8 @@ export function workoutText(w: Workout): string {
   return lines.join("\n");
 }
 
-/** O que vai para o Mini App: sem os reels do Instagram nem buscas do YouTube
- * (conteúdo de outros criadores). Só ilustração, ficha técnica e vídeos próprios. */
+/** O que vai para o Mini App: ilustração, ficha técnica, vídeos próprios e um único reel de apoio
+ * por exercício (link que abre no Instagram, com a posição do exercício no vídeo). */
 export function paraApp(w: Workout): Workout {
   return {
     ...w,

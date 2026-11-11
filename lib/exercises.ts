@@ -7,6 +7,7 @@
 import ilustracoes from "../data/ilustracoes.json";
 import videos from "../data/videos.json";
 import { instagramExercises } from "./instagram.generated";
+import { APOIO, type Apoio } from "./apoio";
 import { TECNICA, type Tecnica } from "./tecnica";
 
 export type Equipment = "nenhum" | "tapete" | "halteres" | "miniband" | "caneleira" | "cadeira";
@@ -37,6 +38,8 @@ export type Exercise = {
   youtube?: string;
   /** Ficha técnica que acompanha a ilustração (lib/tecnica.ts). */
   tecnica?: Tecnica;
+  /** Reel do Instagram para consulta, com a posição do exercício no vídeo (lib/apoio.ts). */
+  apoio?: Apoio;
   /** Vídeo próprio do Cool Moms Club (public/videos/<id>.mp4, listado em data/videos.json). */
   video?: string;
 };
@@ -81,6 +84,7 @@ export const exercises: Record<string, Exercise> = Object.fromEntries(
       ...e,
       illustration: e.id in ilustracoes ? `/img/ilustracoes/${e.id}.jpg?v=2` : undefined,
       tecnica: TECNICA[e.id],
+      apoio: APOIO[e.id],
       video: (videos as Record<string, string>)[e.id],
     },
   ]),

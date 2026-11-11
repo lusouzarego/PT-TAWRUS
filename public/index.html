@@ -117,6 +117,7 @@
     .media.video { aspect-ratio: auto; display: block; background: #fff; }
     .media video { display: block; width: 100%; max-height: 65vh; background: #000; }
     .actions { display: flex; gap: 8px; margin-top: 12px; }
+    .apoio-nota { margin: 6px 2px 0; font-size: 13px; color: var(--muted); }
     .actions button { flex: 1; border: 0; border-radius: 12px; padding: 10px 8px; font-size: 14px; font-weight: 600;
       background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--text); }
     details { margin-top: 10px; font-size: 14px; }
@@ -551,8 +552,13 @@
       : ex.image
       ? `<img src="${esc(ex.image)}" alt="${esc(ex.name)}">`
       : `<span aria-hidden="true">${ICONS[st.block] || "💪"}</span>`;
-    const actions = ex.video && hasDemo
-      ? `<div class="actions"><button id="video">${showVideo ? "🖼️ Ver ilustração" : "🎬 Ver vídeo"}</button></div>` : "";
+    const ap = ex.apoio;
+    const ord = ap ? (ap.total === 1 ? "O vídeo é só deste exercício" : `É o ${ap.pos}º exercício do vídeo (de ${ap.total})`) : "";
+    const actions = (ex.video && hasDemo) || ap
+      ? `<div class="actions">
+          ${ex.video && hasDemo ? `<button id="video">${showVideo ? "🖼️ Ver ilustração" : "🎬 Ver vídeo"}</button>` : ""}
+          ${ap ? `<button id="apoio">📱 Vídeo de apoio</button>` : ""}
+        </div>${ap ? `<p class="apoio-nota">${esc(ord)} · Instagram @${esc(ap.author)}</p>` : ""}` : "";
     const li = (xs) => `<ul>${xs.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
     const t = ex.tecnica;
     const stepsHtml = t
@@ -613,6 +619,11 @@
     document.getElementById("play").onclick = () => (running ? pause() : start());
     document.getElementById("prev").onclick = () => go(idx - 1);
     document.getElementById("next").onclick = () => go(idx + 1);
+    const apb = document.getElementById("apoio");
+    if (apb) apb.onclick = () => {
+      const url = ex.apoio.link;
+      if (tg && tg.openLink) tg.openLink(url); else window.open(url, "_blank", "noopener");
+    };
     // Marcar à mão (ex.: treino feito fora do timer). Vai para a tela de concluído.
     document.getElementById("mark-done").onclick = () => {
       stopAndReset(); keepAwake(false); markDone(workout.day); idx = steps.length; render();

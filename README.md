@@ -91,8 +91,10 @@ No plano gratuito (Hobby) da Vercel o envio pode chegar em qualquer minuto entre
 - Cada exercício mostra a **ilustração da personagem** e a **ficha técnica** (`lib/tecnica.ts`):
   **1 · Posição inicial** e **2 · Movimento** (os mesmos números dos quadros da ilustração),
   **⚠️ Atenção** (ângulos, ombros, lombar) e **🌬️ Respiração**.
-- **Sem vídeos externos** no app nem no bot (direitos autorais). Os reels do Instagram ficam só
-  como referência interna em `data/instagram-exercicios.json`.
+- **📱 Vídeo de apoio** (para todas): abre no Instagram um reel salvo onde o exercício aparece, com
+  a posição dele no vídeo ("É o 3º exercício do vídeo (de 5)"), porque o Instagram não abre um reel
+  num segundo específico. Escolha automática em `lib/apoio.ts`: reel só daquele exercício > ele é o
+  1º do reel > reel com menos exercícios. Nada de vídeo de terceiros tocando dentro do app.
 - **Vídeos próprios:** grave o vídeo curto do exercício (só a execução, de preferência sem som,
   MP4 vertical ou horizontal, até ~5 MB), salve em `public/videos/<id>.mp4` e adicione
   `"<id>": "/videos/<id>.mp4"` em `data/videos.json`. O timer passa a mostrar o vídeo em loop,
@@ -117,8 +119,8 @@ paga por **Satispay** ou **IBAN**, com **aprovação manual** da dona pelo Teleg
    **🔁 Renovar 30 dias** (renovar soma 30 dias ao que ainda faltava).
 5. Comandos da dona: `/assinantes`, `/renovar <id>`, `/remover <id>`, `/convidar <id>` (convite do grupo).
 
-Ninguém vê reels do Instagram nem links do YouTube (conteúdo de outros criadores): só as
-ilustrações, a ficha técnica e, no futuro, os vídeos próprios. O timer só abre pelo Telegram, para quem tem acesso (confere o `initData` assinado).
+O app mostra as ilustrações, a ficha técnica e um link de vídeo de apoio por exercício, que abre o
+reel no Instagram (nenhum vídeo de outras criadoras toca dentro do app). O timer só abre pelo Telegram, para quem tem acesso (confere o `initData` assinado).
 
 **Banco de assinantes:** Vercel → pt-tawrus → **Storage** → **Create Database** → **Upstash
 (Redis)** → plano gratuito → conectar ao projeto → Redeploy. Sem ele, quem não é a dona recebe
