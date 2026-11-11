@@ -102,6 +102,13 @@
     .cam-bar { display: flex; align-items: center; justify-content: space-around; padding: 18px 16px calc(22px + env(safe-area-inset-bottom)); background: #000; }
     .cam-bar button { border: 0; background: rgba(255,255,255,.14); color: #fff; width: 52px; height: 52px; border-radius: 50%; font-size: 22px; }
     .cam-bar .cam-shot { width: 76px; height: 76px; background: #fff; box-shadow: 0 0 0 5px rgba(255,255,255,.35); }
+    .cam-bar .cam-shot:disabled { opacity: .35; }
+    .cam-msg { position: absolute; left: 16px; right: 16px; top: 50%; transform: translateY(-60%); color: #fff;
+      text-align: center; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+    .cam-msg[hidden] { display: none; }
+    .cam-msg p { margin: 0 0 6px; font-size: 16px; line-height: 1.4; max-width: 420px; }
+    .cam-msg button { width: min(100%, 360px); border: 0; border-radius: 14px; padding: 13px; font-size: 16px;
+      font-weight: 600; background: rgba(255,255,255,.16); color: #fff; }
     .ci-preview { width: 100%; border-radius: 16px; margin-top: 12px; display: block; }
     .ci-note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
     .error { color: #c0392b; text-align: center; margin-top: 40px; }
@@ -348,29 +355,43 @@
 
   // ── Câmera dentro do app ──────────────────────────────────────────────
   // No Android o Telegram ignora o "capture" do <input> e abre a galeria/Google Fotos.
-  // Por isso a câmera é aberta aqui mesmo (getUserMedia), com botão de disparo e de virar a câmera.
-  // Se o aparelho não deixar (sem suporte ou permissão negada), cai no <input capture> de antes.
-  let camStream = null, camFacing = "user", camEl = null;
-  function camFallback() { const i = document.getElementById("ci-cam-input"); if (i) i.click(); }
-  function closeCamera() {
+  // Por isso a câmera é aberta aqui mesmo (getUserMedia), com disparo e botão de virar.
+  // A tela da câmera abre na hora do toque; se a câmera não vier (permissão recém-dada,
+  // aparelho sem suporte), ela mostra o motivo e botões: tentar de novo, câmera do sistema
+  // ou galeria. Esses botões são toques da própria pessoa, então o Android deixa abrir.
+  let camStream = null, camFacing = "user", camEl = null, camTimer = null;
+  function stopStream() {
+    clearTimeout(camTimer);
     if (camStream) camStream.getTracks().forEach((t) => t.stop());
     camStream = null;
+  }
+  function closeCamera() {
+    stopStream();
     if (camEl) { camEl.remove(); camEl = null; }
   }
-  async function openCamera() {
-    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) return camFallback();
-    try {
-      camStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: camFacing, width: { ideal: 1920 }, height: { ideal: 1920 } }, audio: false,
-      });
-    } catch (e) {
-      camStream = null;
-      return camFallback();
-    }
+  function camMsg(html) {
+    const m = camEl && camEl.querySelector(".cam-msg");
+    if (!m) return;
+    m.innerHTML = html; m.hidden = !html;
+    camEl.querySelector(".cam-shot").disabled = !!html;
+    m.querySelectorAll("[data-act]").forEach((el) => (el.onclick = () => {
+      const act = el.dataset.act;
+      if (act === "retry") return startCamera();
+      const input = document.getElementById(act === "system" ? "ci-cam-input" : "ci-file");
+      closeCamera();
+      if (input) input.click();
+    }));
+  }
+  const camHelp = (why) => `<p>${why}</p>
+    <button data-act="retry">🔄 Tentar de novo</button>
+    <button data-act="system">📷 Abrir a câmera do aparelho</button>
+    <button data-act="gallery">🖼️ Escolher da galeria</button>`;
+  function openCamera() {
     if (!camEl) {
       camEl = document.createElement("div");
       camEl.className = "cam";
       camEl.innerHTML = `<video playsinline muted autoplay></video>
+        <div class="cam-msg" hidden></div>
         <div class="cam-bar">
           <button class="cam-x" aria-label="Fechar câmera">✕</button>
           <button class="cam-shot" aria-label="Tirar foto"></button>
@@ -378,27 +399,46 @@
         </div>`;
       document.body.appendChild(camEl);
       camEl.querySelector(".cam-x").onclick = closeCamera;
-      camEl.querySelector(".cam-flip").onclick = () => {
-        camStream.getTracks().forEach((t) => t.stop());
-        camFacing = camFacing === "user" ? "environment" : "user";
-        openCamera();
-      };
-      camEl.querySelector(".cam-shot").onclick = () => {
-        const v = camEl.querySelector("video");
-        if (!v.videoWidth) return;
-        const cv = document.createElement("canvas");
-        cv.width = v.videoWidth; cv.height = v.videoHeight;
-        const g = cv.getContext("2d");
-        if (camFacing === "user") { g.translate(cv.width, 0); g.scale(-1, 1); } // igual ao que ela viu na tela
-        g.drawImage(v, 0, 0);
-        buzz("end");
-        cv.toBlob((b) => { closeCamera(); if (b) makeCard(b); }, "image/jpeg", 0.92);
-      };
+      camEl.querySelector(".cam-flip").onclick = () => { camFacing = camFacing === "user" ? "environment" : "user"; startCamera(); };
+      camEl.querySelector(".cam-shot").onclick = shoot;
     }
+    startCamera();
+  }
+  async function startCamera() {
+    stopStream();
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+      return camMsg(camHelp("Este aparelho não deixa o app usar a câmera diretamente."));
+    }
+    camMsg("<p>Abrindo a câmera…</p>");
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: camFacing, width: { ideal: 1920 }, height: { ideal: 1920 } }, audio: false,
+      });
+    } catch (e) {
+      // Na primeira vez, logo depois de "Permitir", o Android às vezes recusa: tentar de novo resolve.
+      return camMsg(camHelp(`Não consegui abrir a câmera (${esc(e && e.name || "erro")}). Se você acabou de tocar em Permitir, toque em Tentar de novo.`));
+    }
+    if (!camEl) return stopStream();
     const v = camEl.querySelector("video");
     v.classList.toggle("mirror", camFacing === "user");
     v.srcObject = camStream;
     v.play().catch(() => {});
+    const ready = () => { if (v.videoWidth) { clearTimeout(camTimer); camMsg(""); return true; } };
+    if (!ready()) {
+      v.onloadedmetadata = v.onplaying = ready;
+      camTimer = setTimeout(() => { if (!ready()) camMsg(camHelp("A câmera não mostrou imagem.")); }, 5000);
+    }
+  }
+  function shoot() {
+    const v = camEl && camEl.querySelector("video");
+    if (!v || !v.videoWidth) return;
+    const cv = document.createElement("canvas");
+    cv.width = v.videoWidth; cv.height = v.videoHeight;
+    const g = cv.getContext("2d");
+    if (camFacing === "user") { g.translate(cv.width, 0); g.scale(-1, 1); } // igual ao que ela viu na tela
+    g.drawImage(v, 0, 0);
+    buzz("end");
+    cv.toBlob((b) => { closeCamera(); if (b) makeCard(b); }, "image/jpeg", 0.92);
   }
 
   // Monta o card 1080×1350: foto + faixa verde-escura com "TREINO CONCLUÍDO",
