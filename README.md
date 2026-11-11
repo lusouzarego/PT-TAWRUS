@@ -126,8 +126,10 @@ ilustrações, a ficha técnica e, no futuro, os vídeos próprios. O timer só 
 
 ## Check-in do treino
 
-No fim do treino, a tela "Treino concluído" tem **📷 Tirar foto agora** (abre a câmera frontal
-direto) e **🖼️ Escolher da galeria**. Com a foto, o timer monta um card (foto + "✅ TREINO CONCLUÍDO"
+No fim do treino, a tela "Treino concluído" tem **📷 Tirar foto agora** (abre a câmera dentro do
+próprio app, com disparo e 🔄 para virar a câmera; no Android o Telegram não abre a câmera pelo
+seletor de arquivos, por isso ela é aberta direto. Se o aparelho negar a câmera, cai no seletor do
+sistema) e **🖼️ Escolher da galeria**. Com a foto, o timer monta um card (foto + "✅ TREINO CONCLUÍDO"
 + treino + data + selo COOL MOMS CLUB). **↺ Trocar a foto** volta para essa escolha.
 
 - **💚 Compartilhar com o Cool Moms Club:** o bot manda o card na conversa privada dela e posta no

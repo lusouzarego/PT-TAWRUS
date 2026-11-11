@@ -95,6 +95,13 @@
     .btn-soft { display: block; width: 100%; border: 0; border-radius: 14px; padding: 12px; margin-top: 10px;
       font-size: 15px; font-weight: 600; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--text); }
     .btn-link { border: 0; background: none; color: var(--muted); font-size: 14px; margin-top: 14px; text-decoration: underline; }
+    /* Câmera em tela cheia (check-in) */
+    .cam { position: fixed; inset: 0; z-index: 1000; background: #000; display: flex; flex-direction: column; }
+    .cam video { flex: 1; width: 100%; min-height: 0; object-fit: cover; background: #000; }
+    .cam video.mirror { transform: scaleX(-1); }
+    .cam-bar { display: flex; align-items: center; justify-content: space-around; padding: 18px 16px calc(22px + env(safe-area-inset-bottom)); background: #000; }
+    .cam-bar button { border: 0; background: rgba(255,255,255,.14); color: #fff; width: 52px; height: 52px; border-radius: 50%; font-size: 22px; }
+    .cam-bar .cam-shot { width: 76px; height: 76px; background: #fff; box-shadow: 0 0 0 5px rgba(255,255,255,.35); }
     .ci-preview { width: 100%; border-radius: 16px; margin-top: 12px; display: block; }
     .ci-note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
     .error { color: #c0392b; text-align: center; margin-top: 40px; }
@@ -328,7 +335,7 @@
     const $ = (id) => document.getElementById(id);
     if ($("restart")) $("restart").onclick = () => { checkin = { stage: "idle", image: null, msg: "" }; go(0); };
     // Câmera: capture abre a câmera direto (frontal, para a selfie do treino). Galeria: só escolher.
-    if ($("ci-camera")) $("ci-camera").onclick = () => $("ci-cam-input").click();
+    if ($("ci-camera")) $("ci-camera").onclick = () => openCamera();
     if ($("ci-gallery")) $("ci-gallery").onclick = () => $("ci-file").click();
     const picked = (e) => { const f = e.target.files && e.target.files[0]; if (f) makeCard(f); };
     if ($("ci-cam-input")) $("ci-cam-input").onchange = picked;
@@ -337,6 +344,61 @@
     if ($("ci-retake")) $("ci-retake").onclick = () => { checkin = { stage: "idle", image: null, msg: "" }; render(); };
     if ($("ci-private")) $("ci-private").onclick = () => sendCheckin(false);
     if ($("ci-share")) $("ci-share").onclick = () => sendCheckin(true);
+  }
+
+  // ── Câmera dentro do app ──────────────────────────────────────────────
+  // No Android o Telegram ignora o "capture" do <input> e abre a galeria/Google Fotos.
+  // Por isso a câmera é aberta aqui mesmo (getUserMedia), com botão de disparo e de virar a câmera.
+  // Se o aparelho não deixar (sem suporte ou permissão negada), cai no <input capture> de antes.
+  let camStream = null, camFacing = "user", camEl = null;
+  function camFallback() { const i = document.getElementById("ci-cam-input"); if (i) i.click(); }
+  function closeCamera() {
+    if (camStream) camStream.getTracks().forEach((t) => t.stop());
+    camStream = null;
+    if (camEl) { camEl.remove(); camEl = null; }
+  }
+  async function openCamera() {
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) return camFallback();
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: camFacing, width: { ideal: 1920 }, height: { ideal: 1920 } }, audio: false,
+      });
+    } catch (e) {
+      camStream = null;
+      return camFallback();
+    }
+    if (!camEl) {
+      camEl = document.createElement("div");
+      camEl.className = "cam";
+      camEl.innerHTML = `<video playsinline muted autoplay></video>
+        <div class="cam-bar">
+          <button class="cam-x" aria-label="Fechar câmera">✕</button>
+          <button class="cam-shot" aria-label="Tirar foto"></button>
+          <button class="cam-flip" aria-label="Virar câmera">🔄</button>
+        </div>`;
+      document.body.appendChild(camEl);
+      camEl.querySelector(".cam-x").onclick = closeCamera;
+      camEl.querySelector(".cam-flip").onclick = () => {
+        camStream.getTracks().forEach((t) => t.stop());
+        camFacing = camFacing === "user" ? "environment" : "user";
+        openCamera();
+      };
+      camEl.querySelector(".cam-shot").onclick = () => {
+        const v = camEl.querySelector("video");
+        if (!v.videoWidth) return;
+        const cv = document.createElement("canvas");
+        cv.width = v.videoWidth; cv.height = v.videoHeight;
+        const g = cv.getContext("2d");
+        if (camFacing === "user") { g.translate(cv.width, 0); g.scale(-1, 1); } // igual ao que ela viu na tela
+        g.drawImage(v, 0, 0);
+        buzz("end");
+        cv.toBlob((b) => { closeCamera(); if (b) makeCard(b); }, "image/jpeg", 0.92);
+      };
+    }
+    const v = camEl.querySelector("video");
+    v.classList.toggle("mirror", camFacing === "user");
+    v.srcObject = camStream;
+    v.play().catch(() => {});
   }
 
   // Monta o card 1080×1350: foto + faixa verde-escura com "TREINO CONCLUÍDO",
