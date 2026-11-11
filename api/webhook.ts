@@ -80,7 +80,13 @@ async function welcome(chatId: number, name?: string) {
   await send(
     chatId,
     `Oi${name ? `, ${esc(name)}` : ""}! 💪 Bem-vinda ao Cool Moms Club: treinos em casa de até 1 hora, ` +
-      `com timer de 40 s por exercício.\n\n${DISCLAIMER}\n\nAqui vai o treino de hoje 👇\n\n${HELP}`,
+      `com timer de 40 s por exercício.\n\n` +
+      (communityId()
+        ? "💚 <b>Grupo do Cool Moms Club:</b> é lá que as mães compartilham os check-ins e se apoiam. " +
+          "Toque em <b>Entrar no grupo</b> no convite que te mandei, ou mande /comunidade a qualquer momento " +
+          "para receber um link novo.\n\n"
+        : "") +
+      `${DISCLAIMER}\n\nAqui vai o treino de hoje 👇\n\n${HELP}`,
     { reply_markup: { inline_keyboard: [[{ text: "▶️ Abrir timer", web_app: { url: appUrl() } }]] } },
   );
 }
