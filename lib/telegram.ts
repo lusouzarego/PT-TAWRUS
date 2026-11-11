@@ -49,6 +49,7 @@ export async function setupBot(): Promise<string> {
       { command: "hoje", description: "Treino de hoje" },
       { command: "semana", description: "Plano da semana" },
       { command: "dia", description: "Treino de um dia: /dia qui" },
+      { command: "comunidade", description: "Convite para o grupo do Cool Moms Club" },
     ],
   });
   // Nome e descrição que aparecem no perfil do bot.
@@ -71,6 +72,7 @@ export async function setupBot(): Promise<string> {
         { command: "assinantes", description: "Lista de assinantes e vencimentos" },
         { command: "renovar", description: "Renovar 30 dias: /renovar <id>" },
         { command: "remover", description: "Remover acesso: /remover <id>" },
+        { command: "convidar", description: "Mandar convite do grupo: /convidar <id>" },
       ],
     });
   }

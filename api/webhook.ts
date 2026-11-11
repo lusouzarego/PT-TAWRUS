@@ -5,8 +5,10 @@
 // Aprovadas têm 30 dias de acesso (/hoje, /semana, /dia, timer). O cron avisa 3 dias antes
 // e pausa no vencimento; a dona renova com um toque.
 //
-// Comandos da dona: /assinantes, /renovar <id>, /remover <id>.
+// Comandos da dona: /assinantes, /renovar <id>, /remover <id>, /convidar <id>.
+// Aprovar/renovar manda o convite do grupo da comunidade; remover tira a pessoa do grupo.
 import { hasAccess, isOwner, ownerId } from "../lib/access";
+import { communityId, inviteNote, inviteToCommunity, removeFromCommunity } from "../lib/comunidade";
 import { appUrl, sendWorkout, tg, webhookSecret, weekText } from "../lib/telegram";
 import { dayKeyFor, isDayKey } from "../lib/workout";
 import { DAY_MS, extend, getMember, hasStore, isActive, listMembers, saveMember, type Member } from "../lib/store";
@@ -29,7 +31,8 @@ const HELP =
   "Comandos:\n" +
   "/hoje: treino de hoje\n" +
   "/semana: plano da semana\n" +
-  "/dia qui: treino de um dia (seg, ter, qua, qui, sex, sab, dom)\n\n" +
+  "/dia qui: treino de um dia (seg, ter, qua, qui, sex, sab, dom)\n" +
+  "/comunidade: convite para o grupo do Cool Moms Club\n\n" +
   "O botão 🏋️ Timer, ao lado do campo de mensagem, abre o timer a qualquer momento.";
 
 // Assinatura: valor e dados de pagamento vêm das variáveis da Vercel (o repositório é público).
@@ -151,6 +154,8 @@ async function handleCallback(cb: NonNullable<Update["callback_query"]>) {
         ? `🎉 Seu acesso ao Cool Moms Club foi aprovado! Válido até ${fmtDate(updated.expiresAt)}.`
         : `🎉 Assinatura renovada! Acesso válido até ${fmtDate(updated.expiresAt)}.`,
     );
+    // Convite do grupo logo depois da aprovação (antes do treino, que manda várias fotos).
+    note += inviteNote[await inviteToCommunity(m.id, m.name.split(" ")[0])];
     if (action === "ap") {
       await welcome(m.id, m.name.split(" ")[0]);
       await sendWorkout(m.id, dayKeyFor());
@@ -192,6 +197,17 @@ async function ownerCommand(cmd: string, arg: string | undefined, chatId: number
     await send(chatId, `<b>Assinantes</b> (${list.filter((m) => isActive(m)).length} ativos)\n\n${lines.join("\n")}\n\n/renovar &lt;id&gt; · /remover &lt;id&gt;`);
     return true;
   }
+  if (cmd === "/convidar") {
+    const m = arg ? await getMember(Number(arg)) : null;
+    if (!m || !isActive(m)) {
+      await send(chatId, "Use /convidar &lt;id&gt; com o id de uma assinante ativa (veja em /assinantes).");
+      return true;
+    }
+    const r = await inviteToCommunity(m.id, m.name.split(" ")[0]);
+    const txt = { sem_grupo: "O grupo ainda não está configurado (COMUNIDADE_CHAT_ID).", ja_no_grupo: "já está no grupo.", convidada: "convite enviado. 💚", erro: "não consegui criar o convite." }[r];
+    await send(chatId, r === "sem_grupo" ? txt : `${who(m)}: ${txt}`);
+    return true;
+  }
   if (cmd === "/renovar" || cmd === "/remover") {
     const m = arg ? await getMember(Number(arg)) : null;
     if (!m) {
@@ -201,11 +217,13 @@ async function ownerCommand(cmd: string, arg: string | undefined, chatId: number
     if (cmd === "/renovar") {
       const u = extend(m);
       await saveMember(u);
-      await send(chatId, `✅ ${who(u)} renovado até ${fmtDate(u.expiresAt)}`);
       await send(m.id, `🎉 Assinatura renovada! Acesso válido até ${fmtDate(u.expiresAt)}.`);
+      const inv = await inviteToCommunity(m.id, m.name.split(" ")[0]);
+      await send(chatId, `✅ ${who(u)} renovado até ${fmtDate(u.expiresAt)}${inviteNote[inv]}`);
     } else {
       await saveMember({ ...m, status: "removed" });
-      await send(chatId, `⚫️ ${who(m)} removido.`);
+      const out = await removeFromCommunity(m.id);
+      await send(chatId, `⚫️ ${who(m)} removido${out ? " (e retirado do grupo)" : ""}.`);
     }
     return true;
   }
@@ -276,12 +294,22 @@ export async function POST(request: Request): Promise<Response> {
       await sendWorkout(chatId, arg);
     } else if (cmd === "/semana" || cmd === "/dia") {
       await send(chatId, weekText());
+    } else if (cmd === "/comunidade") {
+      if (!communityId()) {
+        await send(chatId, "O grupo do Cool Moms Club ainda está sendo preparado. Assim que estiver pronto, você recebe o convite. 💚");
+      } else if (owner) {
+        await send(chatId, "Você é a dona do grupo. 😉 As assinantes recebem o convite ao serem aprovadas, ou mandando /comunidade.");
+      } else {
+        const r = await inviteToCommunity(from.id, from.first_name || "");
+        if (r === "ja_no_grupo") await send(chatId, "Você já está no grupo do Cool Moms Club. 💚");
+        if (r === "erro") await send(chatId, "Não consegui gerar o convite agora. Já avisei a administradora. 💚");
+      }
     } else if (cmd === "/assinatura" && !owner) {
       const m = await getMember(from.id);
       const left = m?.expiresAt ? Math.ceil((m.expiresAt - Date.now()) / DAY_MS) : 0;
       await send(chatId, `Sua assinatura vale até ${fmtDate(m?.expiresAt)} (${left} dia${left === 1 ? "" : "s"}).`);
     } else {
-      await send(chatId, owner ? `${HELP}\n\nAdministração: /assinantes, /renovar &lt;id&gt;, /remover &lt;id&gt;` : `${HELP}\n/assinatura: até quando vale o seu acesso`);
+      await send(chatId, owner ? `${HELP}\n\nAdministração: /assinantes, /renovar &lt;id&gt;, /remover &lt;id&gt;, /convidar &lt;id&gt;` : `${HELP}\n/assinatura: até quando vale o seu acesso`);
     }
   } catch (err) {
     // 200 mesmo com erro, para o Telegram não reenviar a mesma mensagem sem parar.

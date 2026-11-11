@@ -1,7 +1,8 @@
 // Rotina diária dos vencimentos (chamada pelo cron das 5h na Itália):
 // - 3 dias antes: lembrete para a assinante
-// - no vencimento: pausa o acesso, avisa a assinante e manda à dona o botão de renovar
+// - no vencimento: pausa o acesso, tira do grupo, avisa a assinante e manda à dona o botão de renovar
 import { ownerId } from "./access";
+import { removeFromCommunity } from "./comunidade";
 import { DAY_MS, hasStore, listMembers, saveMember } from "./store";
 import { tg } from "./telegram";
 
@@ -15,6 +16,7 @@ export async function checkExpirations(now = Date.now()): Promise<{ reminded: nu
     if (m.status !== "active" || !m.expiresAt) continue;
     if (m.expiresAt <= now) {
       await saveMember({ ...m, status: "expired" });
+      const out = await removeFromCommunity(m.id);
       await tg("sendMessage", {
         chat_id: m.id,
         text: "⏰ Sua assinatura do Cool Moms Club venceu. Mande /start para pedir a renovação.",
@@ -22,7 +24,7 @@ export async function checkExpirations(now = Date.now()): Promise<{ reminded: nu
       await tg("sendMessage", {
         chat_id: ownerId(),
         parse_mode: "HTML",
-        text: `🔴 Assinatura vencida: ${m.name}${m.username ? ` (@${m.username})` : ""} · id <code>${m.id}</code>`,
+        text: `🔴 Assinatura vencida: ${m.name}${m.username ? ` (@${m.username})` : ""} · id <code>${m.id}</code>${out ? "\nRetirada do grupo; ao renovar ela recebe um convite novo." : ""}`,
         reply_markup: { inline_keyboard: [[{ text: "🔁 Renovar 30 dias", callback_data: `rn:${m.id}` }]] },
       });
       expired++;

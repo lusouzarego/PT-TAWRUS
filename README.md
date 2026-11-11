@@ -115,7 +115,7 @@ paga por **Satispay** ou **IBAN**, com **aprovação manual** da dona pelo Teleg
    `/dia`, `/assinatura` e o botão 🏋️ Timer. O envio automático das 5h é só da dona.
 4. 3 dias antes do vencimento ela recebe um lembrete. No vencimento o acesso pausa e a dona recebe
    **🔁 Renovar 30 dias** (renovar soma 30 dias ao que ainda faltava).
-5. Comandos da dona: `/assinantes`, `/renovar <id>`, `/remover <id>`.
+5. Comandos da dona: `/assinantes`, `/renovar <id>`, `/remover <id>`, `/convidar <id>` (convite do grupo).
 
 Ninguém vê reels do Instagram nem links do YouTube (conteúdo de outros criadores): só as
 ilustrações, a ficha técnica e, no futuro, os vídeos próprios. O timer só abre pelo Telegram, para quem tem acesso (confere o `initData` assinado).
@@ -148,6 +148,13 @@ feito fora do timer.
 **Ligar a comunidade:** crie um grupo no Telegram → adicione o @pt_tawrus_bot como **administrador**
 → mande `/id` no grupo → coloque o número em `COMUNIDADE_CHAT_ID` na Vercel → Redeploy.
 No grupo o bot não responde às conversas, só posta os check-ins.
+
+**Entrada e saída do grupo (automática):** bots não podem colocar alguém num grupo diretamente,
+então ao **aprovar** ou **renovar** uma assinante o bot manda para ela um **link de convite só dela**
+(1 pessoa, vale 7 dias) com o botão **💚 Entrar no grupo**. No **vencimento** ou em `/remover` o bot
+tira a pessoa do grupo (sem bloquear; ao renovar ela recebe outro convite).
+- A assinante pede um link novo com `/comunidade`; a dona manda com `/convidar <id>`.
+- O bot precisa ser administrador com as permissões **Convidar via link** e **Banir/remover usuários**.
 
 ## Manutenção
 
